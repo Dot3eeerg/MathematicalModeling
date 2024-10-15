@@ -1,0 +1,28 @@
+{
+  "Radius": "5",
+  "XInterval": "[0.0, 3.0]",
+  "XSplits": "4",
+  "XInnerSplits": "3",
+  "XCoefficient": "1.1",
+  "XInnerCoefficient": "1",
+  "YInterval": "[0.0, 3.0]",
+  "YSplits": "4",
+  "YInnerSplits": "3",
+  "YCoefficient": "1.1",
+  "YInnerCoefficient": "1",
+  "Circle tear": "[2, 1]",
+  "Left border": "1",
+  "Bottom border": "1",
+  "Circle border": "1",
+  "Material": "1",
+  "Circle materials": [
+    {
+      "Degrees": "30",
+      "Material": "2"
+    },
+    {
+      "Degrees": "60",
+      "Material": "1"
+    }
+  ]
+}
