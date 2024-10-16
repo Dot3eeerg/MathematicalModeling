@@ -16,33 +16,34 @@ public class GridParameters(
     CircleFragmentation circleTear,
     byte leftBorder,
     byte bottomBorder,
-    byte circleBorder)
+    byte circleBorder,
+    double material,
+    IEnumerable<CircleMaterial> circleMaterials)
 {
-    [JsonProperty("Radius"), JsonRequired]
     public double Radius { get; } = radius;
     
-    [JsonProperty("XInterval"), JsonRequired]
+    [JsonProperty("X interval"), JsonRequired]
     public Interval XInterval { get; } = xInterval;
     
-    [JsonProperty("XSplits"), JsonRequired]
+    [JsonProperty("X splits"), JsonRequired]
     public int XSplits { get; } = xSplits;
     
-    [JsonProperty("XInnerSplits"), JsonRequired]
+    [JsonProperty("X inner splits"), JsonRequired]
     public int XInnerSplits { get; } = xInnerSplits;
     
-    [JsonProperty("XCoefficient"), JsonRequired]
+    [JsonProperty("X coefficient"), JsonRequired]
     public double XCoefficient { get; } = xCoefficient;
     
-    [JsonProperty("YInterval"), JsonRequired]
+    [JsonProperty("Y interval"), JsonRequired]
     public Interval YInterval { get; } = yInterval;
     
-    [JsonProperty("YSplits"), JsonRequired]
+    [JsonProperty("Y splits"), JsonRequired]
     public int YSplits { get; } = ySplits;
     
-    [JsonProperty("YInnerSplits"), JsonRequired]
+    [JsonProperty("Y inner splits"), JsonRequired]
     public int YInnerSplits { get; } = yInnerSplits;
     
-    [JsonProperty("YCoefficient"), JsonRequired]
+    [JsonProperty("Y coefficient"), JsonRequired]
     public double YCoefficient { get; } = yCoefficient;
     
     [JsonProperty("Circle tear"), JsonRequired]
@@ -56,6 +57,11 @@ public class GridParameters(
     
     [JsonProperty("Circle border"), JsonRequired]
     public byte CircleBorder { get; } = circleBorder;
+
+    public double Material { get; } = material;
+    
+    [JsonProperty("Circle materials"), JsonRequired]
+    public IReadOnlyList<CircleMaterial> CircleMaterials { get; } = circleMaterials.ToList();
 
     public static GridParameters ReadFromJson(string json)
     {

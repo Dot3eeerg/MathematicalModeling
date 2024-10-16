@@ -1,28 +1,40 @@
 {
-  "Radius": "5",
-  "XInterval": "[0.0, 3.0]",
-  "XSplits": "4",
-  "XInnerSplits": "3",
-  "XCoefficient": "1.1",
-  "XInnerCoefficient": "1",
-  "YInterval": "[0.0, 3.0]",
-  "YSplits": "4",
-  "YInnerSplits": "3",
-  "YCoefficient": "1.1",
-  "YInnerCoefficient": "1",
-  "Circle tear": "[2, 1]",
-  "Left border": "1",
-  "Bottom border": "1",
-  "Circle border": "1",
-  "Material": "1",
+  "Radius": 5,
+  "X interval":
+    {
+      "LeftBorder": 0.0,
+      "RightBorder": 3.0
+    },
+  "X splits": 4,
+  "X inner splits": 3,
+  "X coefficient": 1.1,
+  "X inner coefficient": 1,
+  "Y interval":
+    {
+      "LeftBorder": 0.0,
+      "RightBorder": 3.0
+    },
+  "Y splits": 4,
+  "Y inner splits": 3,
+  "Y coefficient": 1.1,
+  "Y inner coefficient": 1,
+  "Circle tear":
+    {
+      "Offset": 2,
+      "Split": 1
+    },
+  "Left border": 1,
+  "Bottom border": 1,
+  "Circle border": 1,
+  "Material": 1,
   "Circle materials": [
     {
-      "Degrees": "30",
-      "Material": "2"
+      "Degrees": 30,
+      "Material": 2.0
     },
     {
-      "Degrees": "60",
-      "Material": "1"
+      "Degrees": 60,
+      "Material": 1.0
     }
   ]
 }
