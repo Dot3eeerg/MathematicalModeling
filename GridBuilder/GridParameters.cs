@@ -6,13 +6,13 @@ namespace GridBuilder;
 public class GridParameters(
     double radius,
     Interval xInterval,
-    int xSplits,
     int xInnerSplits,
     double xCoefficient,
     Interval yInterval,
-    int ySplits,
     int yInnerSplits,
     double yCoefficient,
+    int circleSplits,
+    double circleCoefficient,
     CircleFragmentation circleTear,
     byte leftBorder,
     byte bottomBorder,
@@ -25,9 +25,6 @@ public class GridParameters(
     [JsonProperty("X interval"), JsonRequired]
     public Interval XInterval { get; } = xInterval;
     
-    [JsonProperty("X splits"), JsonRequired]
-    public int XSplits { get; } = xSplits;
-    
     [JsonProperty("X inner splits"), JsonRequired]
     public int XInnerSplits { get; } = xInnerSplits;
     
@@ -37,15 +34,18 @@ public class GridParameters(
     [JsonProperty("Y interval"), JsonRequired]
     public Interval YInterval { get; } = yInterval;
     
-    [JsonProperty("Y splits"), JsonRequired]
-    public int YSplits { get; } = ySplits;
-    
     [JsonProperty("Y inner splits"), JsonRequired]
     public int YInnerSplits { get; } = yInnerSplits;
     
     [JsonProperty("Y coefficient"), JsonRequired]
     public double YCoefficient { get; } = yCoefficient;
     
+    [JsonProperty("Circle splits"), JsonRequired]
+    public int CircleSplits { get; } = circleSplits;
+
+    [JsonProperty("Circle coefficient"), JsonRequired]
+    public double CircleCoefficient { get; } = circleCoefficient;
+
     [JsonProperty("Circle tear"), JsonRequired]
     public CircleFragmentation CircleTear { get; } = circleTear;
     

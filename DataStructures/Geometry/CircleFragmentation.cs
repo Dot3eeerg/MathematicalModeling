@@ -1,3 +1,3 @@
 ﻿namespace DataStructures.Geometry;
 
-public record struct CircleFragmentation(int Offset, int Split);
+public record struct CircleFragmentation(int Offset, int Split, int Depth);

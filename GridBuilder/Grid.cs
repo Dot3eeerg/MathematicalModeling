@@ -2,10 +2,15 @@
 
 namespace GridBuilder;
 
-public class Grid: GridBuilder
+public class Grid
 {
-    public IReadOnlyList<Point> Points { get; } = _points.AsReadOnly();
-    public IReadOnlyList<FiniteElement> FiniteElements { get; } = _finiteElements.AsReadOnly();
+    private readonly GridBuilder _builder = new();
     
-    
+    public new IReadOnlyList<Point> Points { get; }
+    public new IReadOnlyList<FiniteElement> FiniteElements { get; }
+
+    public void Build(GridParameters parameters)
+    {
+        _builder.BuildGrid(parameters);
+    }
 }
