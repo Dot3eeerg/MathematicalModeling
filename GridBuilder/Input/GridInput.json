@@ -21,12 +21,13 @@
   "Circle tear":
     {
       "Offset": 3,
-      "Split": 1,
-      "Depth": 1
+      "Split": 2,
+      "Depth": 2
     },
   "Left border": 1,
   "Bottom border": 1,
   "Circle border": 1,
+  "Circle tear border": 2,
   "Material": 1,
   "Circle materials": [
     {

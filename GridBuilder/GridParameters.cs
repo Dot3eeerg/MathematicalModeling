@@ -17,6 +17,7 @@ public class GridParameters(
     byte leftBorder,
     byte bottomBorder,
     byte circleBorder,
+    byte circleTearBorder,
     double material,
     IEnumerable<CircleMaterial> circleMaterials)
 {
@@ -57,6 +58,9 @@ public class GridParameters(
     
     [JsonProperty("Circle border"), JsonRequired]
     public byte CircleBorder { get; } = circleBorder;
+    
+    [JsonProperty("Circle tear border"), JsonRequired]
+    public byte CircleTearBorder { get; } = circleTearBorder;
 
     public double Material { get; } = material;
     

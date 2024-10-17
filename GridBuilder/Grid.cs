@@ -6,8 +6,10 @@ public class Grid
 {
     private readonly GridBuilder _builder = new();
     
-    public new IReadOnlyList<Point>? Points { get; private set; }
-    public new IReadOnlyList<FiniteElement>? FiniteElements { get; private set; }
+    public IReadOnlyList<Point>? Points { get; private set; }
+    public IReadOnlyList<FiniteElement>? FiniteElements { get; private set; }
+    public IReadOnlySet<int>? DirichletNodes { get; private set; }
+    public IReadOnlySet<Edge>? Edges { get; private set; }
 
     public void Build(GridParameters parameters)
     {

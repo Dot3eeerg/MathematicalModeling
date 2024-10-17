@@ -5,10 +5,11 @@ namespace GridBuilder;
 public class GridBuilder
 {
     private GridParameters? Parameters { get; set; }
-
+    
     private Point[] _points = null!;
     private List<FiniteElement> _finiteElements = null!;
-    private List<double> _circleMaterials = new List<double>();
+    private readonly List<double> _circleMaterials = new List<double>();
+    private HashSet<int> _fictitiousNodes = new HashSet<int>();
     
     public (Point[], List<FiniteElement>) BuildGrid(GridParameters parameters)
     {
@@ -35,6 +36,7 @@ public class GridBuilder
         double[] y = new double[innerY + Parameters.CircleSplits];
         
         _points = new Point[innerX * innerY + circleSplits * Parameters.CircleSplits];
+        _fictitiousNodes.UnionWith(Enumerable.Range(0, _points.Length));
 
         double xPoint = Parameters.XInterval.LeftBorder;
         double hx = Math.Abs(Parameters.XCoefficient - 1.0) < 1e-14
@@ -154,12 +156,15 @@ public class GridBuilder
                 nodes[1] = j + innerX * i + 1;
                 nodes[2] = j + innerX * i + innerX;
                 nodes[3] = j + innerX * i + innerX + 1;
+                
+                _fictitiousNodes.ExceptWith(nodes.ToArray());
 
                 _finiteElements.Add(new FiniteElement(nodes.ToArray(), Parameters.Material));
             }
         }
 
         int materialCounter = 0;
+        
         // Inner vertical with circle scopes
         for (int i = 0; i < innerX - 1; i++)
         {
@@ -167,6 +172,8 @@ public class GridBuilder
             nodes[1] = innerX * innerY + i;
             nodes[2] = innerX * i + 2 * innerX - 1;
             nodes[3] = innerX * innerY + i + 1;
+            
+            _fictitiousNodes.ExceptWith(nodes.ToArray());
             
             _finiteElements.Add(new FiniteElement(nodes.ToArray(), _circleMaterials[materialCounter++]));
         }
@@ -179,25 +186,39 @@ public class GridBuilder
             nodes[2] = innerX * innerY + innerX + (innerY - i - 1);
             nodes[3] = innerX * innerY + innerX + (innerY - i - 1) - 1;
             
+            _fictitiousNodes.ExceptWith(nodes.ToArray());
+            
             _finiteElements.Add(new FiniteElement(nodes.ToArray(), _circleMaterials[materialCounter++]));
         }
 
+        // Circle scope
         int depth = Parameters.CircleSplits - 1;
         int skipToCircle = innerX * innerY;
         int innerCircle = innerX + innerY - 1;
-        // Circle scope
         for (int i = 0; i < Parameters.CircleSplits - 1; i++)
         {
             materialCounter = 0;
             for (int j = 0; j < innerX + innerY - 2; j++)
             {
+                if (depth <= Parameters.CircleTear.Depth)
+                {
+                    if (j >= Parameters.CircleTear.Offset &&
+                        j <= Parameters.CircleTear.Offset + Parameters.CircleTear.Split - 1)
+                    {
+                        continue;
+                    }
+                }
                 nodes[0] = skipToCircle + j + i * innerCircle;
                 nodes[1] = skipToCircle + j + i * innerCircle + 1;
                 nodes[2] = skipToCircle + j + i * innerCircle + innerCircle;
                 nodes[3] = skipToCircle + j + i * innerCircle + 1 + innerCircle;
                 
+                _fictitiousNodes.ExceptWith(nodes.ToArray());
+                
                 _finiteElements.Add(new FiniteElement(nodes.ToArray(), _circleMaterials[materialCounter++]));
             }
+
+            depth--;
         }
     }
 
