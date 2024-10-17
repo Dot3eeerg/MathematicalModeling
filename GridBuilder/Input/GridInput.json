@@ -17,7 +17,7 @@
   "Y coefficient": 1,
   "Y inner coefficient": 1,
   "Circle splits": 4,
-  "Circle coefficient": 1.2,
+  "Circle coefficient": 1,
   "Circle tear":
     {
       "Offset": 2,

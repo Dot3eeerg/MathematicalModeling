@@ -87,6 +87,29 @@ public class GridBuilder
             yCirclePoint += hyCircle;
             hyCircle *= Parameters.CircleCoefficient;
         }
+
+        int iPoint = 0;
+        // Inner scope
+        for (int i = 0; i < innerY; i++)
+        {
+            for (int j = 0; j < innerX; j++)
+            {
+                _points[iPoint++] = new(x[j], y[i]);
+            }
+        }
+        
+        // Circle scope
+        for (int i = 0; i < Parameters.CircleSplits; i++)
+        {
+            double radius = x[innerX + i];
+            double theta = Math.PI / 2  / (innerX + innerY - 2);
+
+            for (int j = 0; j < innerX + innerY - 1; j++)
+            {
+                var angle = j * theta;
+                _points[iPoint++] = new(radius * Math.Cos(angle), radius * Math.Sin(angle));
+            }
+        }
     }
     
     private void CreateElements()
