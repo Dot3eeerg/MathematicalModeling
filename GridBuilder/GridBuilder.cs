@@ -8,17 +8,16 @@ public class GridBuilder
     
     private Point[] _points = null!;
     private List<FiniteElement> _finiteElements = null!;
-    private readonly List<double> _circleMaterials = new List<double>();
-    private HashSet<int> _dirichletBoundaries = new HashSet<int>();
-    private HashSet<Edge> _neumannBoundaries = new HashSet<Edge>();
-    
-    private HashSet<int> _fictitiousNodes = new HashSet<int>();
-    private HashSet<int> _leftBorderElements = new HashSet<int>();
-    private HashSet<int> _rightBorderElements = new HashSet<int>();
-    private HashSet<int> _bottomBorderElements = new HashSet<int>();
-    private HashSet<int> _topBorderElements = new HashSet<int>();
-    private HashSet<int> _rightTearBorderElements = new HashSet<int>();
-    private HashSet<int> _topTearBorderElements = new HashSet<int>();
+    private readonly List<double> _circleMaterials = new();
+    private HashSet<int> _dirichletBoundaries = new();
+    private HashSet<Edge> _neumannBoundaries = new();
+
+    private HashSet<int> _leftBorderElements = new();
+    private HashSet<int> _rightBorderElements = new();
+    private HashSet<int> _bottomBorderElements = new();
+    private HashSet<int> _topBorderElements = new();
+    private HashSet<int> _rightTearBorderElements = new();
+    private HashSet<int> _topTearBorderElements = new();
     
     public (Point[], List<FiniteElement>, HashSet<int>, HashSet<Edge>) BuildGrid(GridParameters parameters)
     {
@@ -45,7 +44,6 @@ public class GridBuilder
         double[] y = new double[innerY + Parameters.CircleSplits];
         
         _points = new Point[innerX * innerY + circleSplits * Parameters.CircleSplits];
-        _fictitiousNodes.UnionWith(Enumerable.Range(0, _points.Length));
 
         double xPoint = Parameters.XInterval.LeftBorder;
         double hx = Math.Abs(Parameters.XCoefficient - 1.0) < 1e-14
@@ -166,8 +164,6 @@ public class GridBuilder
                 nodes[2] = j + innerX * i + innerX;
                 nodes[3] = j + innerX * i + innerX + 1;
                 
-                _fictitiousNodes.ExceptWith(nodes.ToArray());
-
                 _finiteElements.Add(new FiniteElement(nodes.ToArray(), Parameters.Material));
 
                 if (i == 0)
@@ -191,8 +187,6 @@ public class GridBuilder
             nodes[2] = innerX * i + 2 * innerX - 1;
             nodes[3] = innerX * innerY + i + 1;
             
-            _fictitiousNodes.ExceptWith(nodes.ToArray());
-            
             _finiteElements.Add(new FiniteElement(nodes.ToArray(), _circleMaterials[materialCounter++]));
 
             if (i == 0)
@@ -208,8 +202,6 @@ public class GridBuilder
             nodes[1] = innerX * innerY - (innerY - i);
             nodes[2] = innerX * innerY + innerX + (innerY - i - 1);
             nodes[3] = innerX * innerY + innerX + (innerY - i - 1) - 1;
-            
-            _fictitiousNodes.ExceptWith(nodes.ToArray());
             
             _finiteElements.Add(new FiniteElement(nodes.ToArray(), _circleMaterials[materialCounter++]));
         }
@@ -247,8 +239,6 @@ public class GridBuilder
                     nodes[2] = skipToCircle + j + i * innerCircle + 1 + innerCircle;
                     nodes[3] = skipToCircle + j + i * innerCircle + innerCircle;
                 }
-                
-                _fictitiousNodes.ExceptWith(nodes.ToArray());
                 
                 _finiteElements.Add(new FiniteElement(nodes.ToArray(), _circleMaterials[materialCounter++]));
 
