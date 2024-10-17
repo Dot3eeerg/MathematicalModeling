@@ -20,7 +20,7 @@
   "Circle coefficient": 1.2,
   "Circle tear":
     {
-      "Offset": 3,
+      "Offset": 2,
       "Split": 2,
       "Depth": 2
     },

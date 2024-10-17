@@ -9,9 +9,18 @@ public class GridBuilder
     private Point[] _points = null!;
     private List<FiniteElement> _finiteElements = null!;
     private readonly List<double> _circleMaterials = new List<double>();
-    private HashSet<int> _fictitiousNodes = new HashSet<int>();
+    private HashSet<int> _dirichletBoundaries = new HashSet<int>();
+    private HashSet<Edge> _neumannBoundaries = new HashSet<Edge>();
     
-    public (Point[], List<FiniteElement>) BuildGrid(GridParameters parameters)
+    private HashSet<int> _fictitiousNodes = new HashSet<int>();
+    private HashSet<int> _leftBorderElements = new HashSet<int>();
+    private HashSet<int> _rightBorderElements = new HashSet<int>();
+    private HashSet<int> _bottomBorderElements = new HashSet<int>();
+    private HashSet<int> _topBorderElements = new HashSet<int>();
+    private HashSet<int> _rightTearBorderElements = new HashSet<int>();
+    private HashSet<int> _topTearBorderElements = new HashSet<int>();
+    
+    public (Point[], List<FiniteElement>, HashSet<int>, HashSet<Edge>) BuildGrid(GridParameters parameters)
     {
         Parameters = parameters;
         if (Parameters == null)
@@ -22,7 +31,7 @@ public class GridBuilder
         CreateElements();
         AccountBoundaryConditions();
         
-        return (_points, _finiteElements);
+        return (_points, _finiteElements, _dirichletBoundaries, _neumannBoundaries);
     }
 
     private void CreatePoints()
@@ -160,6 +169,15 @@ public class GridBuilder
                 _fictitiousNodes.ExceptWith(nodes.ToArray());
 
                 _finiteElements.Add(new FiniteElement(nodes.ToArray(), Parameters.Material));
+
+                if (i == 0)
+                {
+                    _bottomBorderElements.Add(_finiteElements.Count - 1);
+                }
+                if (j == 0)
+                {
+                    _leftBorderElements.Add(_finiteElements.Count - 1);
+                }
             }
         }
 
@@ -176,6 +194,11 @@ public class GridBuilder
             _fictitiousNodes.ExceptWith(nodes.ToArray());
             
             _finiteElements.Add(new FiniteElement(nodes.ToArray(), _circleMaterials[materialCounter++]));
+
+            if (i == 0)
+            {
+                _bottomBorderElements.Add(_finiteElements.Count - 1);
+            }
         }
         
         // Inner horizontal with circle scopes
@@ -190,6 +213,7 @@ public class GridBuilder
             
             _finiteElements.Add(new FiniteElement(nodes.ToArray(), _circleMaterials[materialCounter++]));
         }
+        _leftBorderElements.Add(_finiteElements.Count - 1);
 
         // Circle scope
         int depth = Parameters.CircleSplits - 1;
@@ -208,14 +232,67 @@ public class GridBuilder
                         continue;
                     }
                 }
-                nodes[0] = skipToCircle + j + i * innerCircle;
-                nodes[1] = skipToCircle + j + i * innerCircle + 1;
-                nodes[2] = skipToCircle + j + i * innerCircle + innerCircle;
-                nodes[3] = skipToCircle + j + i * innerCircle + 1 + innerCircle;
+
+                if (j < (innerX + innerY - 2) / 2)
+                {
+                    nodes[0] = skipToCircle + j + i * innerCircle;
+                    nodes[1] = skipToCircle + j + i * innerCircle + innerCircle;
+                    nodes[2] = skipToCircle + j + i * innerCircle + 1;
+                    nodes[3] = skipToCircle + j + i * innerCircle + 1 + innerCircle;
+                }
+                else
+                {
+                    nodes[0] = skipToCircle + j + i * innerCircle + 1;
+                    nodes[1] = skipToCircle + j + i * innerCircle;
+                    nodes[2] = skipToCircle + j + i * innerCircle + 1 + innerCircle;
+                    nodes[3] = skipToCircle + j + i * innerCircle + innerCircle;
+                }
                 
                 _fictitiousNodes.ExceptWith(nodes.ToArray());
                 
                 _finiteElements.Add(new FiniteElement(nodes.ToArray(), _circleMaterials[materialCounter++]));
+
+                if (j == 0)
+                {
+                    _bottomBorderElements.Add(_finiteElements.Count - 1);
+                }
+
+                if (j == innerX + innerY - 3)
+                {
+                    _leftBorderElements.Add(_finiteElements.Count - 1);
+                }
+
+                if (j < (innerX + innerY - 2) / 2 && i == Parameters.CircleSplits - 2)
+                {
+                    _rightBorderElements.Add(_finiteElements.Count - 1);
+                }
+                else if (j >= (innerX + innerY - 2) / 2 && i == Parameters.CircleSplits - 2)
+                {
+                    _topBorderElements.Add(_finiteElements.Count - 1);
+                }
+                
+                if (depth <= Parameters.CircleTear.Depth && j == Parameters.CircleTear.Offset - 1)
+                {
+                    _topTearBorderElements.Add(_finiteElements.Count - 1);
+                }
+                else if (depth <= Parameters.CircleTear.Depth &&
+                         j == Parameters.CircleTear.Offset + Parameters.CircleTear.Split)
+                {
+                    _rightTearBorderElements.Add(_finiteElements.Count - 1);
+                }
+
+                if (depth - Parameters.CircleTear.Depth == 1 && j < (innerX + innerY - 2) / 2 &&
+                    j >= Parameters.CircleTear.Offset &&
+                    j <= Parameters.CircleTear.Offset + Parameters.CircleTear.Split - 1)
+                {
+                    _rightTearBorderElements.Add(_finiteElements.Count - 1);
+                }
+                else if (depth - Parameters.CircleTear.Depth == 1 && j >= (innerX + innerY - 2) / 2 &&
+                    j >= Parameters.CircleTear.Offset &&
+                    j <= Parameters.CircleTear.Offset + Parameters.CircleTear.Split - 1)
+                {
+                    _topTearBorderElements.Add(_finiteElements.Count - 1);
+                }
             }
 
             depth--;
@@ -224,6 +301,88 @@ public class GridBuilder
 
     private void AccountBoundaryConditions()
     {
+        foreach (var element in _leftBorderElements)
+        {
+            switch (Parameters!.LeftBorder)
+            {
+                case 1:
+                    _dirichletBoundaries.Add(_finiteElements[element].Nodes[0]);
+                    _dirichletBoundaries.Add(_finiteElements[element].Nodes[2]);
+                    break;
+                case 2:
+                    _neumannBoundaries.Add(new Edge(_finiteElements[element].Nodes[0], _finiteElements[element].Nodes[2]));
+                    break;
+            }
+        }
+
+        foreach (var element in _bottomBorderElements)
+        {
+            switch (Parameters!.BottomBorder)
+            {
+                case 1:
+                    _dirichletBoundaries.Add(_finiteElements[element].Nodes[0]);
+                    _dirichletBoundaries.Add(_finiteElements[element].Nodes[1]);
+                    break;
+                case 2:
+                    _neumannBoundaries.Add(new Edge(_finiteElements[element].Nodes[0], _finiteElements[element].Nodes[1]));
+                    break;
+            }
+        }
         
+        foreach (var element in _topBorderElements)
+        {
+            switch (Parameters!.CircleBorder)
+            {
+                case 1:
+                    _dirichletBoundaries.Add(_finiteElements[element].Nodes[2]);
+                    _dirichletBoundaries.Add(_finiteElements[element].Nodes[3]);
+                    break;
+                case 2:
+                    _neumannBoundaries.Add(new Edge(_finiteElements[element].Nodes[2], _finiteElements[element].Nodes[3]));
+                    break;
+            }
+        }
+        
+        foreach (var element in _rightBorderElements)
+        {
+            switch (Parameters!.CircleBorder)
+            {
+                case 1:
+                    _dirichletBoundaries.Add(_finiteElements[element].Nodes[1]);
+                    _dirichletBoundaries.Add(_finiteElements[element].Nodes[3]);
+                    break;
+                case 2:
+                    _neumannBoundaries.Add(new Edge(_finiteElements[element].Nodes[1], _finiteElements[element].Nodes[3]));
+                    break;
+            }
+        }
+
+        foreach (var element in _topTearBorderElements)
+        {
+            switch (Parameters!.CircleTearBorder)
+            {
+                case 1:
+                    _dirichletBoundaries.Add(_finiteElements[element].Nodes[2]);
+                    _dirichletBoundaries.Add(_finiteElements[element].Nodes[3]);
+                    break;
+                case 2:
+                    _neumannBoundaries.Add(new Edge(_finiteElements[element].Nodes[2], _finiteElements[element].Nodes[3]));
+                    break;
+            }
+        }
+        
+        foreach (var element in _rightTearBorderElements)
+        {
+            switch (Parameters!.CircleTearBorder)
+            {
+                case 1:
+                    _dirichletBoundaries.Add(_finiteElements[element].Nodes[1]);
+                    _dirichletBoundaries.Add(_finiteElements[element].Nodes[3]);
+                    break;
+                case 2:
+                    _neumannBoundaries.Add(new Edge(_finiteElements[element].Nodes[1], _finiteElements[element].Nodes[3]));
+                    break;
+            }
+        }
     }
 }
