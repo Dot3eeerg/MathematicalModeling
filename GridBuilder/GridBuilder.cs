@@ -8,6 +8,7 @@ public class GridBuilder
 
     private Point[] _points = null!;
     private List<FiniteElement> _finiteElements = null!;
+    private List<double> _circleMaterials = new List<double>();
     
     public (Point[], List<FiniteElement>) BuildGrid(GridParameters parameters)
     {
@@ -16,6 +17,7 @@ public class GridBuilder
             throw new ArgumentNullException(nameof(parameters), "Grid parameters cannot be null.");
         
         CreatePoints();
+        GenerateCircleMaterials();
         CreateElements();
         AccountBoundaryConditions();
         
@@ -99,10 +101,10 @@ public class GridBuilder
         }
         
         // Circle scope
+        double theta = Math.PI / 2  / (innerX + innerY - 2);
         for (int i = 0; i < Parameters.CircleSplits; i++)
         {
             double radius = x[innerX + i];
-            double theta = Math.PI / 2  / (innerX + innerY - 2);
 
             for (int j = 0; j < innerX + innerY - 1; j++)
             {
@@ -111,10 +113,92 @@ public class GridBuilder
             }
         }
     }
+
+    private void GenerateCircleMaterials()
+    {
+        int innerX = Parameters!.XInnerSplits + 1;
+        int innerY = Parameters.YInnerSplits + 1;
+        
+        double theta = Math.PI / 2  / (innerX + innerY - 2);
+        for (int i = 1; i < innerX + innerY - 1; i++)
+        {
+            var angle = i * theta;
+            var degrees = angle * 180 / Math.PI;
+
+            for (int j = 0; j < Parameters.CircleMaterials.Count; j++)
+            {
+                if (Parameters.CircleMaterials[j].Degrees - degrees >= 1e-14)
+                {
+                    _circleMaterials.Add(Parameters.CircleMaterials[j].Material);
+                    break;
+                }
+            }
+        }
+    }
     
     private void CreateElements()
     {
+        int quadriteral = 4;
+        _finiteElements = new List<FiniteElement>();
+        Span<int> nodes = stackalloc int[quadriteral];
         
+        int innerX = Parameters!.XInnerSplits + 1;
+        int innerY = Parameters.YInnerSplits + 1;
+
+        // Inner scope
+        for (int i = 0; i < innerY - 1; i++)
+        {
+            for (int j = 0; j < innerX - 1; j++)
+            {
+                nodes[0] = j + innerX * i;
+                nodes[1] = j + innerX * i + 1;
+                nodes[2] = j + innerX * i + innerX;
+                nodes[3] = j + innerX * i + innerX + 1;
+
+                _finiteElements.Add(new FiniteElement(nodes.ToArray(), Parameters.Material));
+            }
+        }
+
+        int materialCounter = 0;
+        // Inner vertical with circle scopes
+        for (int i = 0; i < innerX - 1; i++)
+        {
+            nodes[0] = innerX + innerX * i - 1;
+            nodes[1] = innerX * innerY + i;
+            nodes[2] = innerX * i + 2 * innerX - 1;
+            nodes[3] = innerX * innerY + i + 1;
+            
+            _finiteElements.Add(new FiniteElement(nodes.ToArray(), _circleMaterials[materialCounter++]));
+        }
+        
+        // Inner horizontal with circle scopes
+        for (int i = innerY - 1; i > 0; i--)
+        {
+            nodes[0] = innerX * innerY - (innerY - i) - 1;
+            nodes[1] = innerX * innerY - (innerY - i);
+            nodes[2] = innerX * innerY + innerX + (innerY - i - 1);
+            nodes[3] = innerX * innerY + innerX + (innerY - i - 1) - 1;
+            
+            _finiteElements.Add(new FiniteElement(nodes.ToArray(), _circleMaterials[materialCounter++]));
+        }
+
+        int depth = Parameters.CircleSplits - 1;
+        int skipToCircle = innerX * innerY;
+        int innerCircle = innerX + innerY - 1;
+        // Circle scope
+        for (int i = 0; i < Parameters.CircleSplits - 1; i++)
+        {
+            materialCounter = 0;
+            for (int j = 0; j < innerX + innerY - 2; j++)
+            {
+                nodes[0] = skipToCircle + j + i * innerCircle;
+                nodes[1] = skipToCircle + j + i * innerCircle + 1;
+                nodes[2] = skipToCircle + j + i * innerCircle + innerCircle;
+                nodes[3] = skipToCircle + j + i * innerCircle + 1 + innerCircle;
+                
+                _finiteElements.Add(new FiniteElement(nodes.ToArray(), _circleMaterials[materialCounter++]));
+            }
+        }
     }
 
     private void AccountBoundaryConditions()

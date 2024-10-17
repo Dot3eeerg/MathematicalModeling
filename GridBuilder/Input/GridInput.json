@@ -1,5 +1,5 @@
 {
-  "Radius": 5,
+  "Radius": 10,
   "X interval":
     {
       "LeftBorder": 0.0,
@@ -17,10 +17,10 @@
   "Y coefficient": 1,
   "Y inner coefficient": 1,
   "Circle splits": 4,
-  "Circle coefficient": 1,
+  "Circle coefficient": 1.2,
   "Circle tear":
     {
-      "Offset": 2,
+      "Offset": 3,
       "Split": 1,
       "Depth": 1
     },
@@ -30,11 +30,11 @@
   "Material": 1,
   "Circle materials": [
     {
-      "Degrees": 30,
+      "Degrees": 30.01,
       "Material": 2.0
     },
     {
-      "Degrees": 60,
+      "Degrees": 90.01,
       "Material": 1.0
     }
   ]
