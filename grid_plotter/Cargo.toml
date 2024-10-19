@@ -1,0 +1,15 @@
+[package]
+name = "grid_plotter"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# plotters = "0.3.5"
+# piston_window = "0.128.0"
+# plotters-piston = "0.3.0"
+egui_plot = "0.29.0"
+eframe = "0.29.1"
+
+
+# [patch.crates-io]
+# piston_window = "=0.128.0"
