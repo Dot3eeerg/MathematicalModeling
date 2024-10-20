@@ -1,25 +1,99 @@
-use eframe::egui::{self, DragValue, Event, Vec2};
-use egui_plot::{Legend, Line, PlotPoints};
+use eframe::egui::{self, Color32, DragValue, Event, Vec2};
+use egui_plot::{Legend, PlotPoints, Polygon};
+use std::fs::File;
+use std::io::{self, BufRead};
 
 fn main() -> eframe::Result {
+    let mesh_points = read_mesh_from_file("grid/points").expect("Failed to read mesh points");
+    let elements =
+        read_elements_from_file("grid/finite_elements").expect("Failed to read elements");
+    let dirichlet =
+        read_dirichlet_from_file("grid/dirichlet").expect("Failed to read Dirichlet data");
+    let neumann = read_neumann_from_file("grid/neumann").expect("Failed to read Neumann data");
+
     let options = eframe::NativeOptions::default();
     eframe::run_native(
         "Plot",
         options,
-        Box::new(|_cc| Ok(Box::<PlotExample>::default())),
+        Box::new(|_cc| {
+            Ok(Box::new(GridPlotter::new(
+                mesh_points,
+                elements,
+                dirichlet,
+                neumann,
+            )))
+        }),
     )
 }
 
-struct PlotExample {
+fn read_mesh_from_file(filename: &str) -> io::Result<Vec<(f64, f64)>> {
+    let file = File::open(filename)?;
+    let reader = io::BufReader::new(file);
+    Ok(reader
+        .lines()
+        .map(|line| {
+            let coords: Vec<f64> = line
+                .unwrap()
+                .split_whitespace()
+                .map(|num| num.parse().unwrap())
+                .collect();
+            (coords[0], coords[1])
+        })
+        .collect())
+}
+
+fn read_elements_from_file(filename: &str) -> io::Result<Vec<Vec<usize>>> {
+    let file = File::open(filename)?;
+    let reader = io::BufReader::new(file);
+    Ok(reader
+        .lines()
+        .map(|line| {
+            line.unwrap()
+                .split_whitespace()
+                .map(|num| num.parse().unwrap())
+                .collect()
+        })
+        .collect())
+}
+
+fn read_dirichlet_from_file(filename: &str) -> io::Result<Vec<usize>> {
+    let file = File::open(filename)?;
+    let reader = io::BufReader::new(file);
+    Ok(reader
+        .lines()
+        .map(|line| line.unwrap().trim().parse().unwrap())
+        .collect())
+}
+
+fn read_neumann_from_file(filename: &str) -> io::Result<Vec<Vec<usize>>> {
+    let file = File::open(filename)?;
+    let reader = io::BufReader::new(file);
+    Ok(reader
+        .lines()
+        .map(|line| {
+            line.unwrap()
+                .split_whitespace()
+                .map(|num| num.parse().unwrap())
+                .collect()
+        })
+        .collect())
+}
+
+struct GridPlotter {
     lock_x: bool,
     lock_y: bool,
     ctrl_to_zoom: bool,
     shift_to_horizontal: bool,
     zoom_speed: f32,
     scroll_speed: f32,
+    show_grid: bool,
+    points: Vec<(f64, f64)>,
+    elements: Vec<Vec<usize>>,
+    dirichlet: Vec<usize>,
+    neumann: Vec<Vec<usize>>,
 }
 
-impl Default for PlotExample {
+impl Default for GridPlotter {
     fn default() -> Self {
         Self {
             lock_x: false,
@@ -28,17 +102,46 @@ impl Default for PlotExample {
             shift_to_horizontal: false,
             zoom_speed: 1.0,
             scroll_speed: 1.0,
+            show_grid: true,
+            points: Vec::new(),
+            elements: Vec::new(),
+            dirichlet: Vec::new(),
+            neumann: Vec::new(),
         }
     }
 }
 
-impl eframe::App for PlotExample {
+impl GridPlotter {
+    pub fn new(
+        points: Vec<(f64, f64)>,
+        elements: Vec<Vec<usize>>,
+        dirichlet: Vec<usize>,
+        neumann: Vec<Vec<usize>>,
+    ) -> Self {
+        Self {
+            lock_x: false,
+            lock_y: false,
+            ctrl_to_zoom: false,
+            shift_to_horizontal: false,
+            zoom_speed: 1.0,
+            scroll_speed: 1.0,
+            show_grid: true,
+            points,
+            elements,
+            dirichlet,
+            neumann,
+        }
+    }
+}
+
+impl eframe::App for GridPlotter {
     fn update(&mut self, ctx: &egui::Context, _: &mut eframe::Frame) {
         egui::SidePanel::left("options").show(ctx, |ui| {
             ui.checkbox(&mut self.lock_x, "Lock x axis").on_hover_text("Check to keep the X axis fixed, i.e., pan and zoom will only affect the Y axis");
             ui.checkbox(&mut self.lock_y, "Lock y axis").on_hover_text("Check to keep the Y axis fixed, i.e., pan and zoom will only affect the X axis");
             ui.checkbox(&mut self.ctrl_to_zoom, "Ctrl to zoom").on_hover_text("If unchecked, the behavior of the Ctrl key is inverted compared to the default controls\ni.e., scrolling the mouse without pressing any keys zooms the plot");
             ui.checkbox(&mut self.shift_to_horizontal, "Shift for horizontal scroll").on_hover_text("If unchecked, the behavior of the shift key is inverted compared to the default controls\ni.e., hold to scroll vertically, release to scroll horizontally");
+            ui.checkbox(&mut self.show_grid,"Show grid").on_hover_text("Check to show grid on plot");
             ui.horizontal(|ui| {
                 ui.add(
                     DragValue::new(&mut self.zoom_speed)
@@ -69,13 +172,12 @@ impl eframe::App for PlotExample {
                 (scroll, i.pointer.primary_down(), i.modifiers)
             });
 
-            ui.label("This example shows how to use raw input events to implement different plot controls than the ones egui provides by default, e.g., default to zooming instead of panning when the Ctrl key is not pressed, or controlling much it zooms with each mouse wheel step.");
-
             egui_plot::Plot::new("plot")
                 .allow_zoom(false)
                 .allow_drag(false)
                 .allow_scroll(false)
                 .legend(Legend::default())
+                .show_grid(self.show_grid)
                 .show(ui, |plot_ui| {
                     if let Some(mut scroll) = scroll {
                         if modifiers.ctrl == self.ctrl_to_zoom {
@@ -116,8 +218,79 @@ impl eframe::App for PlotExample {
                         plot_ui.translate_bounds(pointer_translate);
                     }
 
-                    let sine_points = PlotPoints::from_explicit_callback(|x| x.sin(), .., 5000);
-                    plot_ui.line(Line::new(sine_points).name("Sine"));
+                    for element in &self.elements {
+                        if element.len() == 5 {
+                            let vertices: Vec<[f64; 2]> = element
+                                .iter()
+                                .take(4)
+                                .map(|&i| [self.points[i].0, self.points[i].1])
+                                .collect();
+
+                            let color = match element[4] {
+                                0 => Color32::LIGHT_BLUE,
+                                1 => Color32::GREEN,
+                                2 => Color32::GRAY,
+                                3 => Color32::KHAKI,
+                                4 => Color32::DARK_RED,
+                                _ => Color32::BLACK,
+                            };
+
+                            plot_ui.polygon(
+                                Polygon::new(vertices)
+                                    .fill_color(color)
+                                    .stroke(egui::Stroke::new(1.0, egui::Color32::DARK_GRAY)),
+                            );
+                        }
+                    }
+
+                    let grid_points: PlotPoints = self
+                        .points
+                        .iter()
+                        .map(|&(x, y)| [x, y])
+                        .collect::<Vec<[f64; 2]>>()
+                        .into();
+                    plot_ui.points(
+                        egui_plot::Points::new(grid_points)
+                            .radius(5.0)
+                            .color(Color32::BLACK)
+                            .name("Mesh Points"),
+                    );
+
+                    let dirichlet_points: Vec<_> =
+                        self.dirichlet.iter().map(|&i| self.points[i]).collect();
+                    let dirichlet_plot_points: PlotPoints = dirichlet_points
+                        .into_iter()
+                        .map(|(x, y)| [x, y])
+                        .collect::<Vec<[f64; 2]>>()
+                        .into();
+                    plot_ui.points(
+                        egui_plot::Points::new(dirichlet_plot_points)
+                            .name("Dirichlet")
+                            .shape(egui_plot::MarkerShape::Circle)
+                            .radius(5.0)
+                            .color(egui::Color32::ORANGE),
+                    );
+
+                    for neumann_edge in &self.neumann {
+                        if neumann_edge.len() == 2 {
+                            let neumann_plot_points: Vec<_> = neumann_edge
+                                .iter()
+                                .map(|&i| [self.points[i].0, self.points[i].1])
+                                .collect();
+                            plot_ui.points(
+                                egui_plot::Points::new(neumann_plot_points.clone())
+                                    .shape(egui_plot::MarkerShape::Circle)
+                                    .radius(5.0)
+                                    .color(egui::Color32::RED),
+                            );
+                            plot_ui.line(
+                                egui_plot::Line::new(neumann_plot_points)
+                                    .name("Neumann Edges")
+                                    .color(Color32::RED)
+                                    .width(2.0),
+                            );
+                        }
+                    }
                 });
         });
     }
