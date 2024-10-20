@@ -13,7 +13,7 @@ fn main() -> eframe::Result {
 
     let options = eframe::NativeOptions::default();
     eframe::run_native(
-        "Plot",
+        "Grid Plotter",
         options,
         Box::new(|_cc| {
             Ok(Box::new(GridPlotter::new(
@@ -172,7 +172,7 @@ impl eframe::App for GridPlotter {
                 (scroll, i.pointer.primary_down(), i.modifiers)
             });
 
-            egui_plot::Plot::new("plot")
+            egui_plot::Plot::new("Grid plotter")
                 .allow_zoom(false)
                 .allow_drag(false)
                 .allow_scroll(false)
