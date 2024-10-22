@@ -1,27 +1,27 @@
 {
   "X interval":
-    {
-      "LeftBorder": 0.0,
-      "RightBorder": 3.0
-    },
+  {
+    "LeftBorder": 0.0,
+    "RightBorder": 3.0
+  },
   "X inner splits": 3,
   "X coefficient": 1,
   "Y interval":
-    {
-      "LeftBorder": 0.0,
-      "RightBorder": 3.0
-    },
+  {
+    "LeftBorder": 0.0,
+    "RightBorder": 3.0
+  },
   "Y inner splits": 3,
   "Y coefficient": 1,
   "Radius": 10,
   "Circle splits": 4,
-  "Circle coefficient": 1.2,
+  "Circle coefficient": 1,
   "Circle tear":
-    {
-      "Offset": 2,
-      "Split": 2,
-      "Depth": 2
-    },
+  {
+    "Offset": 2,
+    "Split": 2,
+    "Depth": 2
+  },
   "Left border": 1,
   "Bottom border": 1,
   "Circle border": 1,

@@ -2,7 +2,7 @@
 
 namespace GridBuilder;
 
-public class GridBuilder
+public class LinearGridBuilder
 {
     private GridParameters? Parameters { get; set; }
     
@@ -164,7 +164,7 @@ public class GridBuilder
                 nodes[2] = j + innerX * i + innerX;
                 nodes[3] = j + innerX * i + innerX + 1;
                 
-                _finiteElements.Add(new FiniteElement(nodes.ToArray(), Parameters.Material));
+                _finiteElements.Add(new FiniteElement(nodes.ToArray(), Parameters.Material, FiniteElementType.Linear));
 
                 if (i == 0)
                 {
@@ -187,7 +187,7 @@ public class GridBuilder
             nodes[2] = innerX * i + 2 * innerX - 1;
             nodes[3] = innerX * innerY + i + 1;
             
-            _finiteElements.Add(new FiniteElement(nodes.ToArray(), _circleMaterials[materialCounter++]));
+            _finiteElements.Add(new FiniteElement(nodes.ToArray(), _circleMaterials[materialCounter++], FiniteElementType.Linear));
 
             if (i == 0)
             {
@@ -203,7 +203,7 @@ public class GridBuilder
             nodes[2] = innerX * innerY + innerX + (innerY - i - 1);
             nodes[3] = innerX * innerY + innerX + (innerY - i - 1) - 1;
             
-            _finiteElements.Add(new FiniteElement(nodes.ToArray(), _circleMaterials[materialCounter++]));
+            _finiteElements.Add(new FiniteElement(nodes.ToArray(), _circleMaterials[materialCounter++], FiniteElementType.Linear));
         }
         _leftBorderElements.Add(_finiteElements.Count - 1);
 
@@ -221,6 +221,7 @@ public class GridBuilder
                     if (j >= Parameters.CircleTear.Offset &&
                         j <= Parameters.CircleTear.Offset + Parameters.CircleTear.Split - 1)
                     {
+                        materialCounter++;
                         continue;
                     }
                 }
@@ -240,7 +241,7 @@ public class GridBuilder
                     nodes[3] = skipToCircle + j + i * innerCircle + innerCircle;
                 }
                 
-                _finiteElements.Add(new FiniteElement(nodes.ToArray(), _circleMaterials[materialCounter++]));
+                _finiteElements.Add(new FiniteElement(nodes.ToArray(), _circleMaterials[materialCounter++], FiniteElementType.Linear));
 
                 if (j == 0)
                 {

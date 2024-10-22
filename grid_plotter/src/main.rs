@@ -232,6 +232,7 @@ impl eframe::App for GridPlotter {
                                 2 => Color32::GRAY,
                                 3 => Color32::KHAKI,
                                 4 => Color32::DARK_RED,
+                                5 => Color32::YELLOW,
                                 _ => Color32::BLACK,
                             };
 

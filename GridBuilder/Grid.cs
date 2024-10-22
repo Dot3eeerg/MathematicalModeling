@@ -4,7 +4,8 @@ namespace GridBuilder;
 
 public class Grid
 {
-    private readonly GridBuilder _builder = new();
+    private readonly LinearGridBuilder _builder = new();
+    private readonly QuadraticGridBuilder _quadraticBuilder = new();
     
     public IReadOnlyList<Point>? Points { get; private set; }
     public IReadOnlyList<FiniteElement>? FiniteElements { get; private set; }
@@ -14,6 +15,11 @@ public class Grid
     public void Build(GridParameters parameters)
     {
         (Points, FiniteElements, DirichletNodes, NeumannEdges) = _builder.BuildGrid(parameters);
+    }
+
+    public void QuadraticBuild(GridParameters parameters)
+    {
+        (Points, FiniteElements, DirichletNodes, NeumannEdges) = _quadraticBuilder.BuildGrid(parameters);
     }
 
     public void SaveGrid(string folder)
