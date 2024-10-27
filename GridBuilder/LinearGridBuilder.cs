@@ -9,15 +9,15 @@ public class LinearGridBuilder
     private Point[] _points = null!;
     private List<FiniteElement> _finiteElements = null!;
     private readonly List<double> _circleMaterials = new();
-    private HashSet<int> _dirichletBoundaries = new();
-    private HashSet<Edge> _neumannBoundaries = new();
+    private readonly HashSet<int> _dirichletBoundaries = new();
+    private readonly HashSet<Edge> _neumannBoundaries = new();
 
-    private HashSet<int> _leftBorderElements = new();
-    private HashSet<int> _rightBorderElements = new();
-    private HashSet<int> _bottomBorderElements = new();
-    private HashSet<int> _topBorderElements = new();
-    private HashSet<int> _rightTearBorderElements = new();
-    private HashSet<int> _topTearBorderElements = new();
+    private readonly HashSet<int> _leftBorderElements = new();
+    private readonly HashSet<int> _rightBorderElements = new();
+    private readonly HashSet<int> _bottomBorderElements = new();
+    private readonly HashSet<int> _topBorderElements = new();
+    private readonly HashSet<int> _rightTearBorderElements = new();
+    private readonly HashSet<int> _topTearBorderElements = new();
     
     public (Point[], List<FiniteElement>, HashSet<int>, HashSet<Edge>) BuildGrid(GridParameters parameters)
     {

@@ -31,16 +31,18 @@ public readonly record struct BiLinearBasis : IBasis2D
                 0 => -GetXi(0, point.Y),
                 1 => GetXi(0, point.Y),
                 2 => -GetXi(1, point.Y),
-                3 => GetXi(1, point.Y)
+                3 => GetXi(1, point.Y),
+                _ => throw new ArgumentOutOfRangeException(nameof(number), number, "Not expected function number")
             },
             1 => number switch
             {
                 0 => -GetXi(0, point.X),
                 1 => -GetXi(1, point.X),
                 2 => GetXi(0, point.X),
-                3 => GetXi(1, point.X)
+                3 => GetXi(1, point.X),
+                _ => throw new ArgumentOutOfRangeException(nameof(number), number, "Not expected function number")
             },
-            _ => throw new ArgumentOutOfRangeException(nameof(number), number, "Not expected function number")
+            _ => throw new ArgumentOutOfRangeException(nameof(dNumber), dNumber, "Not expected function number")
         };
 
     private double GetXi(int number, double value)

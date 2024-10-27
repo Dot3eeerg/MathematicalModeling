@@ -2,6 +2,8 @@
 
 public record struct Point(double X, double Y)
 {
+    public void Reset() { X = Y = 0; }
+    
     public override string ToString() => $"{X} {Y}";
 
     public static Point operator +(Point p1, Point p2) => new (p1.X + p2.X, p1.Y + p2.Y);

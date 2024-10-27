@@ -278,12 +278,6 @@ impl eframe::App for GridPlotter {
                                 .iter()
                                 .map(|&i| [self.points[i].0, self.points[i].1])
                                 .collect();
-                            plot_ui.points(
-                                egui_plot::Points::new(neumann_plot_points.clone())
-                                    .shape(egui_plot::MarkerShape::Circle)
-                                    .radius(5.0)
-                                    .color(egui::Color32::RED),
-                            );
                             plot_ui.line(
                                 egui_plot::Line::new(neumann_plot_points)
                                     .name("Neumann Edges")

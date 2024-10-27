@@ -25,7 +25,7 @@
   "Left border": 1,
   "Bottom border": 1,
   "Circle border": 1,
-  "Circle tear border": 2,
+  "Circle tear border": 1,
   "Material": 1,
   "Circle materials": [
     {

@@ -9,15 +9,15 @@ public class QuadraticGridBuilder
     private Point[] _points = null!;
     private List<FiniteElement> _finiteElements = null!;
     private readonly List<double> _circleMaterials = new();
-    private HashSet<int> _dirichletBoundaries = new();
-    private HashSet<Edge> _neumannBoundaries = new();
+    private readonly HashSet<int> _dirichletBoundaries = new();
+    private readonly HashSet<Edge> _neumannBoundaries = new();
 
-    private HashSet<int> _leftBorderElements = new();
-    private HashSet<int> _rightBorderElements = new();
-    private HashSet<int> _bottomBorderElements = new();
-    private HashSet<int> _topBorderElements = new();
-    private HashSet<int> _rightTearBorderElements = new();
-    private HashSet<int> _topTearBorderElements = new();
+    private readonly HashSet<int> _leftBorderElements = new();
+    private readonly HashSet<int> _rightBorderElements = new();
+    private readonly HashSet<int> _bottomBorderElements = new();
+    private readonly HashSet<int> _topBorderElements = new();
+    private readonly HashSet<int> _rightTearBorderElements = new();
+    private readonly HashSet<int> _topTearBorderElements = new();
     
     public (Point[], List<FiniteElement>, HashSet<int>, HashSet<Edge>) BuildGrid(GridParameters parameters)
     {
@@ -117,11 +117,36 @@ public class QuadraticGridBuilder
             }
         }
         
-        // Circle scope
         double theta = Math.PI / 2 / (Parameters.XInnerSplits + Parameters.YInnerSplits);
-        for (int i = 0; i < 2 * Parameters.CircleSplits; i++)
+        
+        // Transition from inner to circle scope
+        List<Point> points = new (innerX + innerY - 1);
+        int xIter = innerX - 1, yIter = 0;
+        for (int i = 0; i < innerX + innerY - 1; i++)
         {
-            double radius = x[innerX + i];
+            var angle = i * theta / 2.0;
+            points.Add(new (x[innerX + 1] * Math.Cos(angle), y[innerX + 1] * Math.Sin(angle)));
+            _points[iPoint++] = new ((points[i].X + x[xIter]) / 2.0, (points[i].Y + y[yIter]) / 2.0);
+
+            if (i < (innerX + innerY) / 2 - 1)
+            {
+                yIter++;
+            }
+            else
+            {
+                xIter--;
+            }
+        }
+
+        foreach (var point in points)
+        {
+            _points[iPoint++] = point;
+        }
+        
+        // Circle scope
+        for (int i = 0; i < 2 * Parameters.CircleSplits - 2; i++)
+        {
+            double radius = x[innerX + i + 2];
 
             for (int j = 0; j < innerX + innerY - 1; j++)
             {
@@ -255,7 +280,6 @@ public class QuadraticGridBuilder
                 //         continue;
                 //     }
                 // }
-
                 
                 if (j < (innerX + innerY - 2) / 4)
                 {
@@ -297,7 +321,7 @@ public class QuadraticGridBuilder
                     _bottomBorderElements.Add(_finiteElements.Count - 1);
                 }
 
-                if (Parameters.XInnerSplits % (j + 1) == 0)
+                if (j == (innerX + innerY) / 2 - 2)
                 {
                     _leftBorderElements.Add(_finiteElements.Count - 1);
                 }
@@ -347,10 +371,11 @@ public class QuadraticGridBuilder
             {
                 case 1:
                     _dirichletBoundaries.Add(_finiteElements[element].Nodes[0]);
-                    _dirichletBoundaries.Add(_finiteElements[element].Nodes[2]);
+                    _dirichletBoundaries.Add(_finiteElements[element].Nodes[3]);
+                    _dirichletBoundaries.Add(_finiteElements[element].Nodes[6]);
                     break;
                 case 2:
-                    _neumannBoundaries.Add(new Edge(_finiteElements[element].Nodes[0], _finiteElements[element].Nodes[2]));
+                    _neumannBoundaries.Add(new Edge(_finiteElements[element].Nodes[0], _finiteElements[element].Nodes[6]));
                     break;
             }
         }
@@ -362,9 +387,10 @@ public class QuadraticGridBuilder
                 case 1:
                     _dirichletBoundaries.Add(_finiteElements[element].Nodes[0]);
                     _dirichletBoundaries.Add(_finiteElements[element].Nodes[1]);
+                    _dirichletBoundaries.Add(_finiteElements[element].Nodes[2]);
                     break;
                 case 2:
-                    _neumannBoundaries.Add(new Edge(_finiteElements[element].Nodes[0], _finiteElements[element].Nodes[1]));
+                    _neumannBoundaries.Add(new Edge(_finiteElements[element].Nodes[0], _finiteElements[element].Nodes[2]));
                     break;
             }
         }
@@ -374,11 +400,12 @@ public class QuadraticGridBuilder
             switch (Parameters!.CircleBorder)
             {
                 case 1:
-                    _dirichletBoundaries.Add(_finiteElements[element].Nodes[2]);
-                    _dirichletBoundaries.Add(_finiteElements[element].Nodes[3]);
+                    _dirichletBoundaries.Add(_finiteElements[element].Nodes[6]);
+                    _dirichletBoundaries.Add(_finiteElements[element].Nodes[7]);
+                    _dirichletBoundaries.Add(_finiteElements[element].Nodes[8]);
                     break;
                 case 2:
-                    _neumannBoundaries.Add(new Edge(_finiteElements[element].Nodes[2], _finiteElements[element].Nodes[3]));
+                    _neumannBoundaries.Add(new Edge(_finiteElements[element].Nodes[6], _finiteElements[element].Nodes[8]));
                     break;
             }
         }
@@ -388,11 +415,12 @@ public class QuadraticGridBuilder
             switch (Parameters!.CircleBorder)
             {
                 case 1:
-                    _dirichletBoundaries.Add(_finiteElements[element].Nodes[1]);
-                    _dirichletBoundaries.Add(_finiteElements[element].Nodes[3]);
+                    _dirichletBoundaries.Add(_finiteElements[element].Nodes[2]);
+                    _dirichletBoundaries.Add(_finiteElements[element].Nodes[5]);
+                    _dirichletBoundaries.Add(_finiteElements[element].Nodes[8]);
                     break;
                 case 2:
-                    _neumannBoundaries.Add(new Edge(_finiteElements[element].Nodes[1], _finiteElements[element].Nodes[3]));
+                    _neumannBoundaries.Add(new Edge(_finiteElements[element].Nodes[2], _finiteElements[element].Nodes[8]));
                     break;
             }
         }
@@ -402,11 +430,12 @@ public class QuadraticGridBuilder
             switch (Parameters!.CircleTearBorder)
             {
                 case 1:
-                    _dirichletBoundaries.Add(_finiteElements[element].Nodes[2]);
-                    _dirichletBoundaries.Add(_finiteElements[element].Nodes[3]);
+                    _dirichletBoundaries.Add(_finiteElements[element].Nodes[6]);
+                    _dirichletBoundaries.Add(_finiteElements[element].Nodes[7]);
+                    _dirichletBoundaries.Add(_finiteElements[element].Nodes[8]);
                     break;
                 case 2:
-                    _neumannBoundaries.Add(new Edge(_finiteElements[element].Nodes[2], _finiteElements[element].Nodes[3]));
+                    _neumannBoundaries.Add(new Edge(_finiteElements[element].Nodes[6], _finiteElements[element].Nodes[8]));
                     break;
             }
         }
@@ -416,11 +445,12 @@ public class QuadraticGridBuilder
             switch (Parameters!.CircleTearBorder)
             {
                 case 1:
-                    _dirichletBoundaries.Add(_finiteElements[element].Nodes[1]);
-                    _dirichletBoundaries.Add(_finiteElements[element].Nodes[3]);
+                    _dirichletBoundaries.Add(_finiteElements[element].Nodes[2]);
+                    _dirichletBoundaries.Add(_finiteElements[element].Nodes[5]);
+                    _dirichletBoundaries.Add(_finiteElements[element].Nodes[8]);
                     break;
                 case 2:
-                    _neumannBoundaries.Add(new Edge(_finiteElements[element].Nodes[1], _finiteElements[element].Nodes[3]));
+                    _neumannBoundaries.Add(new Edge(_finiteElements[element].Nodes[2], _finiteElements[element].Nodes[8]));
                     break;
             }
         }
