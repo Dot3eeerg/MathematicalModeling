@@ -1,4 +1,5 @@
-﻿using DataStructures.Geometry;
+﻿using DataStructures;
+using DataStructures.Geometry;
 using Newtonsoft.Json;
 
 namespace GridBuilder;

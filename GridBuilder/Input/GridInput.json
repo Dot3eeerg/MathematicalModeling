@@ -20,7 +20,8 @@
   {
     "Offset": 2,
     "Split": 3,
-    "Depth": 2
+    "Depth": 3,
+    "Height": 2
   },
   "Left border": 1,
   "Bottom border": 1,
