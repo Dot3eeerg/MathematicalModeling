@@ -271,15 +271,15 @@ public class QuadraticGridBuilder
             materialCounter = 0;
             for (int j = 0; j < (innerX + innerY - 2) / 2; j++)
             {
-                // if (depth <= Parameters.CircleTear.Depth)
-                // {
-                //     if (j >= Parameters.CircleTear.Offset &&
-                //         j <= Parameters.CircleTear.Offset + Parameters.CircleTear.Split - 1)
-                //     {
-                //         materialCounter++;
-                //         continue;
-                //     }
-                // }
+                if (depth <= Parameters.CircleTear.Depth)
+                {
+                    if (j >= Parameters.CircleTear.Offset &&
+                        j <= Parameters.CircleTear.Offset + Parameters.CircleTear.Split - 1)
+                    {
+                        materialCounter++;
+                        continue;
+                    }
+                }
                 
                 if (j < (innerX + innerY - 2) / 4)
                 {
@@ -335,28 +335,28 @@ public class QuadraticGridBuilder
                     _topBorderElements.Add(_finiteElements.Count - 1);
                 }
                 
-                // if (depth <= Parameters.CircleTear.Depth && j == Parameters.CircleTear.Offset - 1)
-                // {
-                //     _topTearBorderElements.Add(_finiteElements.Count - 1);
-                // }
-                // else if (depth <= Parameters.CircleTear.Depth &&
-                //          j == Parameters.CircleTear.Offset + Parameters.CircleTear.Split)
-                // {
-                //     _rightTearBorderElements.Add(_finiteElements.Count - 1);
-                // }
-                //
-                // if (depth - Parameters.CircleTear.Depth == 1 && j < (innerX + innerY - 2) / 2 &&
-                //     j >= Parameters.CircleTear.Offset &&
-                //     j <= Parameters.CircleTear.Offset + Parameters.CircleTear.Split - 1)
-                // {
-                //     _rightTearBorderElements.Add(_finiteElements.Count - 1);
-                // }
-                // else if (depth - Parameters.CircleTear.Depth == 1 && j >= (innerX + innerY - 2) / 2 &&
-                //     j >= Parameters.CircleTear.Offset &&
-                //     j <= Parameters.CircleTear.Offset + Parameters.CircleTear.Split - 1)
-                // {
-                //     _topTearBorderElements.Add(_finiteElements.Count - 1);
-                // }
+                if (depth <= Parameters.CircleTear.Depth && j == Parameters.CircleTear.Offset - 1)
+                {
+                    _topTearBorderElements.Add(_finiteElements.Count - 1);
+                }
+                else if (depth <= Parameters.CircleTear.Depth &&
+                         j == Parameters.CircleTear.Offset + Parameters.CircleTear.Split)
+                {
+                    _rightTearBorderElements.Add(_finiteElements.Count - 1);
+                }
+                
+                if (depth - Parameters.CircleTear.Depth == 1 && j < (innerX + innerY - 2) / 4 &&
+                    j >= Parameters.CircleTear.Offset &&
+                    j <= Parameters.CircleTear.Offset + Parameters.CircleTear.Split - 1)
+                {
+                    _rightTearBorderElements.Add(_finiteElements.Count - 1);
+                }
+                else if (depth - Parameters.CircleTear.Depth == 1 && j >= (innerX + innerY - 2) / 4 &&
+                    j >= Parameters.CircleTear.Offset &&
+                    j <= Parameters.CircleTear.Offset + Parameters.CircleTear.Split - 1)
+                {
+                    _topTearBorderElements.Add(_finiteElements.Count - 1);
+                }
             }
 
             depth--;
