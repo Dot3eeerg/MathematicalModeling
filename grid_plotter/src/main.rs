@@ -241,6 +241,28 @@ impl eframe::App for GridPlotter {
                                     .fill_color(color)
                                     .stroke(egui::Stroke::new(1.0, egui::Color32::DARK_GRAY)),
                             );
+                        } else if element.len() == 9 {
+                            let vertices: Vec<[f64; 2]> = element
+                                .iter()
+                                .take(8)
+                                .map(|&i| [self.points[i].0, self.points[i].1])
+                                .collect();
+
+                            let color = match element[8] {
+                                0 => Color32::LIGHT_BLUE,
+                                1 => Color32::GREEN,
+                                2 => Color32::GRAY,
+                                3 => Color32::KHAKI,
+                                4 => Color32::DARK_RED,
+                                5 => Color32::YELLOW,
+                                _ => Color32::BLACK,
+                            };
+
+                            plot_ui.polygon(
+                                Polygon::new(vertices)
+                                    .fill_color(color)
+                                    .stroke(egui::Stroke::new(1.0, egui::Color32::DARK_GRAY)),
+                            );
                         }
                     }
 

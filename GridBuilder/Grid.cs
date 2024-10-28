@@ -22,6 +22,21 @@ public class Grid
         (Points, FiniteElements, DirichletNodes, NeumannEdges) = _quadraticBuilder.BuildGrid(parameters);
     }
 
+    public string GetElementBasis(int iElem)
+    {
+        if (FiniteElements is null)
+        {
+            throw new InvalidOperationException("Finite elements cannot be null");
+        }
+
+        if (FiniteElements.Count < iElem)
+        {
+            throw new InvalidOperationException("Finite elements cannot be less than " + iElem);
+        }
+
+        return FiniteElements[iElem].PrintByBasis();
+    }
+
     public void SaveGrid(string folder)
     {
         var sw = new StreamWriter($"{folder}/points");
