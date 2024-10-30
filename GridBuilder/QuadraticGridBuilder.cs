@@ -120,21 +120,36 @@ public class QuadraticGridBuilder
         double theta = Math.PI / 2 / (Parameters.XInnerSplits + Parameters.YInnerSplits);
         
         // Transition from inner to circle scope
-        List<Point> points = new (innerX + innerY - 1);
+        Span<Point> points = stackalloc Point[innerX + innerY - 1];
         int xIter = innerX - 1, yIter = 0;
-        for (int i = 0; i < innerX + innerY - 1; i++)
+        for (int i = 0; i < innerX + innerY - 1; i+=2)
         {
             var angle = i * theta / 2.0;
-            points.Add(new (x[innerX + 1] * Math.Cos(angle), y[innerX + 1] * Math.Sin(angle)));
-            _points[iPoint++] = new ((points[i].X + x[xIter]) / 2.0, (points[i].Y + y[yIter]) / 2.0);
-
-            if (i < (innerX + innerY) / 2 - 1)
+            
+            if (i == 0)
             {
-                yIter++;
+                points[i] = new (x[innerX + 1] * Math.Cos(angle), y[innerX + 1] * Math.Sin(angle));
+                _points[iPoint++] = new ((points[i].X + x[xIter]) / 2.0, (points[i].Y + y[yIter]) / 2.0);
             }
             else
             {
-                xIter--;
+                points[i] = new (x[innerX + 1] * Math.Cos(angle), y[innerX + 1] * Math.Sin(angle));
+                points[i - 1] = new ((points[i].X + points[i - 2].X) / 2.0, (points[i].Y + points[i - 2].Y) / 2.0);
+
+                _points[++iPoint] = new ((points[i].X + x[xIter]) / 2.0, (points[i].Y + y[yIter]) / 2.0);
+                _points[iPoint - 1] = new((_points[iPoint].X + _points[iPoint - 2].X) / 2.0,
+                    (_points[iPoint].Y + _points[iPoint - 2].Y) / 2.0);
+
+                iPoint++;
+            }
+            
+            if (i < (innerX + innerY) / 2 - 1)
+            {
+                yIter+=2;
+            }
+            else
+            {
+                xIter-=2;
             }
         }
 
@@ -144,14 +159,37 @@ public class QuadraticGridBuilder
         }
         
         // Circle scope
-        for (int i = 0; i < 2 * Parameters.CircleSplits - 2; i++)
+        for (int i = 0; i < 2 * Parameters.CircleSplits - 2; i+=2)
         {
-            double radius = x[innerX + i + 2];
-
-            for (int j = 0; j < innerX + innerY - 1; j++)
+            double radius = x[innerX + i + 3];
+        
+            for (int j = 0; j < innerX + innerY - 1; j+=2)
             {
                 var angle = j * theta / 2.0;
-                _points[iPoint++] = new(radius * Math.Cos(angle), radius * Math.Sin(angle));
+                
+                points[j] = new(radius * Math.Cos(angle), radius * Math.Sin(angle));
+
+                if (j == 0)
+                {
+                    _points[iPoint++] = new((points[j].X + _points[iPoint - (innerX + innerY - 1) - 1].X) / 2.0,
+                        (points[j].Y + _points[iPoint - (innerX + innerY - 1) - 1].Y) / 2.0);
+                }
+                else
+                {
+                    points[j - 1] = new((points[j].X + points[j - 2].X) / 2.0, (points[j].Y + points[j - 2].Y) / 2.0);
+                    
+                    _points[++iPoint] = new((points[j].X + _points[iPoint - (innerX + innerY - 1)].X) / 2.0,
+                        (points[j].Y + _points[iPoint - (innerX + innerY - 1)].Y) / 2.0);
+                    _points[iPoint - 1] = new((_points[iPoint].X + _points[iPoint - 2].X) / 2.0,
+                        (_points[iPoint].Y + _points[iPoint - 2].Y) / 2.0);
+
+                    iPoint++;
+                }
+            }
+
+            foreach (var point in points)
+            {
+                _points[iPoint++] = point;
             }
         }
     }
