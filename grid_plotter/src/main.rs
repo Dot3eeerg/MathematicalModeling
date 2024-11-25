@@ -1,7 +1,8 @@
-use eframe::egui::{self, Color32, DragValue, Event, Vec2};
+use eframe::egui::{self, Color32, DragValue, Event, RichText, Vec2};
 use egui_plot::{Legend, PlotPoints, Polygon};
 use std::fs::File;
 use std::io::{self, BufRead};
+use std::process::id;
 
 fn main() -> eframe::Result {
     let mesh_points = read_mesh_from_file("grid/points").expect("Failed to read mesh points");
@@ -242,6 +243,7 @@ impl eframe::App for GridPlotter {
                                     .stroke(egui::Stroke::new(1.0, egui::Color32::DARK_GRAY)),
                             );
                         } else if element.len() == 9 {
+                            // We take 9 numbers in quadratic element, because
                             let vertices: Vec<[f64; 2]> = element
                                 .iter()
                                 .take(8)
@@ -278,6 +280,17 @@ impl eframe::App for GridPlotter {
                             .color(Color32::BLACK)
                             .name("Mesh Points"),
                     );
+
+                    // Add labels for point IDs
+                    for (i, &(x, y)) in self.points.iter().enumerate() {
+                        plot_ui.text(
+                            egui_plot::Text::new(
+                                [x + 0.15, y].into(),
+                                RichText::new(format!("{}", i)).size(15.0),
+                            )
+                            .color(Color32::DARK_BLUE),
+                        );
+                    }
 
                     let dirichlet_points: Vec<_> =
                         self.dirichlet.iter().map(|&i| self.points[i]).collect();
