@@ -11,6 +11,7 @@ public class QuadraticGridBuilder
     private readonly List<double> _circleMaterials = new();
     private readonly HashSet<int> _dirichletBoundaries = new();
     private readonly HashSet<Edge> _neumannBoundaries = new();
+    private readonly HashSet<int> _fictitiousPoints = new();
 
     private readonly HashSet<int> _leftBorderElements = new();
     private readonly HashSet<int> _rightBorderElements = new();
@@ -19,7 +20,7 @@ public class QuadraticGridBuilder
     private readonly HashSet<int> _rightTearBorderElements = new();
     private readonly HashSet<int> _topTearBorderElements = new();
     
-    public (Point[], List<FiniteElement>, HashSet<int>, HashSet<Edge>) BuildGrid(GridParameters parameters)
+    public (Point[], List<FiniteElement>, HashSet<int>, HashSet<Edge>, HashSet<int>) BuildGrid(GridParameters parameters)
     {
         Parameters = parameters;
         if (Parameters == null)
@@ -30,7 +31,7 @@ public class QuadraticGridBuilder
         CreateElements();
         AccountBoundaryConditions();
         
-        return (_points, _finiteElements, _dirichletBoundaries, _neumannBoundaries);
+        return (_points, _finiteElements, _dirichletBoundaries, _neumannBoundaries, _fictitiousPoints);
     }
 
     private void CreatePoints()
@@ -314,6 +315,39 @@ public class QuadraticGridBuilder
                     if (j >= Parameters.CircleTear.Offset &&
                         j <= Parameters.CircleTear.Offset + Parameters.CircleTear.Split - 1)
                     {
+                        if (j < (innerX + innerY - 2) / 4)
+                        {
+                            int firstPoint = innerSkip + circleRow + 2 * i * circleRow + 2 * j;
+                        
+                            _fictitiousPoints.Add(firstPoint);
+                            _fictitiousPoints.Add(firstPoint + circleRow);
+                            _fictitiousPoints.Add(firstPoint + 2 * circleRow);
+                            
+                            _fictitiousPoints.Add(firstPoint + 1);
+                            _fictitiousPoints.Add(firstPoint + circleRow + 1);
+                            _fictitiousPoints.Add(firstPoint + 2 * circleRow + 1);
+                            
+                            _fictitiousPoints.Add(firstPoint + 2);
+                            _fictitiousPoints.Add(firstPoint + circleRow + 2);
+                            _fictitiousPoints.Add(firstPoint + 2 * circleRow + 2);
+                        }
+                        else
+                        {
+                            int firstPoint = innerSkip + circleRow + 2 * i * circleRow + 2 * j + 2;
+                            
+                            _fictitiousPoints.Add(firstPoint);
+                            _fictitiousPoints.Add(firstPoint - 1);
+                            _fictitiousPoints.Add(firstPoint - 2);
+                            
+                            _fictitiousPoints.Add(firstPoint + circleRow);
+                            _fictitiousPoints.Add(firstPoint + circleRow - 1);
+                            _fictitiousPoints.Add(firstPoint + circleRow - 2);
+                            
+                            _fictitiousPoints.Add(firstPoint + 2 * circleRow);
+                            _fictitiousPoints.Add(firstPoint + 2 * circleRow - 1);
+                            _fictitiousPoints.Add(firstPoint + 2 * circleRow - 2);
+                        }
+                        
                         materialCounter++;
                         continue;
                     }

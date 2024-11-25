@@ -7,19 +7,20 @@ public class Grid
     private readonly LinearGridBuilder _builder = new();
     private readonly QuadraticGridBuilder _quadraticBuilder = new();
     
-    public IReadOnlyList<Point>? Points { get; private set; }
+    public IReadOnlyList<Point>? Nodes { get; private set; }
     public IReadOnlyList<FiniteElement>? FiniteElements { get; private set; }
     public IReadOnlySet<int>? DirichletNodes { get; private set; }
     public IReadOnlySet<Edge>? NeumannEdges { get; private set; }
+    public IReadOnlySet<int>? FictitiousNodes { get; private set; }
 
     public void Build(GridParameters parameters)
     {
-        (Points, FiniteElements, DirichletNodes, NeumannEdges) = _builder.BuildGrid(parameters);
+        (Nodes, FiniteElements, DirichletNodes, NeumannEdges) = _builder.BuildGrid(parameters);
     }
 
     public void QuadraticBuild(GridParameters parameters)
     {
-        (Points, FiniteElements, DirichletNodes, NeumannEdges) = _quadraticBuilder.BuildGrid(parameters);
+        (Nodes, FiniteElements, DirichletNodes, NeumannEdges, FictitiousNodes) = _quadraticBuilder.BuildGrid(parameters);
     }
 
     public string GetElementBasis(int iElem)
@@ -40,7 +41,7 @@ public class Grid
     public void SaveGrid(string folder)
     {
         var sw = new StreamWriter($"{folder}/points");
-        foreach (var point in Points!)
+        foreach (var point in Nodes!)
         {
             sw.WriteLine(point.ToString());
         }

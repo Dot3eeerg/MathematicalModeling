@@ -1,0 +1,41 @@
+﻿{
+  "X interval":
+  {
+    "LeftBorder": 0.0,
+    "RightBorder": 3.0
+  },
+  "X inner splits": 3,
+  "X coefficient": 1,
+  "Y interval":
+  {
+    "LeftBorder": 0.0,
+    "RightBorder": 3.0
+  },
+  "Y inner splits": 3,
+  "Y coefficient": 1,
+  "Radius": 10,
+  "Circle splits": 4,
+  "Circle coefficient": 1,
+  "Circle tear":
+  {
+    "Offset": 2,
+    "Split": 3,
+    "Depth": 2,
+    "Height": 1
+  },
+  "Left border": 1,
+  "Bottom border": 1,
+  "Circle border": 1,
+  "Circle tear border": 1,
+  "Material": 1,
+  "Circle materials": [
+    {
+      "Degrees": 30.01,
+      "Material": 1.0
+    },
+    {
+      "Degrees": 90.01,
+      "Material": 1.0
+    }
+  ]
+}
