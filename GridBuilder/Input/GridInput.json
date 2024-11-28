@@ -4,24 +4,24 @@
     "LeftBorder": 0.0,
     "RightBorder": 3.0
   },
-  "X inner splits": 3,
+  "X inner splits": 6,
   "X coefficient": 1,
   "Y interval":
   {
     "LeftBorder": 0.0,
     "RightBorder": 3.0
   },
-  "Y inner splits": 3,
+  "Y inner splits": 6,
   "Y coefficient": 1,
   "Radius": 10,
-  "Circle splits": 4,
+  "Circle splits": 8,
   "Circle coefficient": 1,
   "Circle tear":
   {
-    "Offset": 2,
-    "Split": 3,
-    "Depth": 2,
-    "Height": 1
+    "Offset": 0,
+    "Split": 0,
+    "Depth": 0,
+    "Height": 0
   },
   "Left border": 1,
   "Bottom border": 1,

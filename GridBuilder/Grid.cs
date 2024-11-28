@@ -10,13 +10,21 @@ public class Grid
     public IReadOnlyList<Point>? Nodes { get; private set; }
     public IReadOnlyList<FiniteElement>? FiniteElements { get; private set; }
     public IReadOnlySet<int>? DirichletNodes { get; private set; }
-    public IReadOnlySet<Edge>? NeumannEdges { get; private set; }
+    // public IReadOnlySet<Edge>? NeumannEdges { get; private set; }
+    public IReadOnlySet<Edge3>? NeumannEdges { get; private set; }
     public IReadOnlySet<int>? FictitiousNodes { get; private set; }
 
-    public void Build(GridParameters parameters)
+    public void SetElement()
     {
-        (Nodes, FiniteElements, DirichletNodes, NeumannEdges) = _builder.BuildGrid(parameters);
+        // Nodes = new[] { new Point(1, 1), new Point(5, 3), new(2, 5), new(4, 5) };
+        Nodes = new[] { new Point(1, 1), new Point(3, 2), new Point(5, 3), new(1.5, 3), new(3, 3.5), new(4.5, 4), new(2, 5), new(3, 5), new(4, 5) };
+        FiniteElements = new[] { new FiniteElement(new []{ 0, 1, 2, 3, 4, 5, 6, 7, 8 }, 1, 0) };
     }
+
+    // public void LinearBuild(GridParameters parameters)
+    // {
+    //     (Nodes, FiniteElements, DirichletNodes, NeumannEdges) = _builder.BuildGrid(parameters);
+    // }
 
     public void QuadraticBuild(GridParameters parameters)
     {

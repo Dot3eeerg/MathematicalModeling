@@ -35,3 +35,28 @@ public readonly record struct SegmentGaussOrder9 : IQuadrature
             _ => throw new ArgumentOutOfRangeException(nameof(number), number, "Not expected weight number")
         };
 }
+
+public readonly record struct SegmentGaussOrder5 : IQuadrature
+{
+    public int Size => 3;
+
+    public SegmentGaussOrder5() { }
+
+    public double GetPoint(int number)
+        => number switch
+        {
+            0 => 0.0,
+            1 => -Math.Sqrt(3.0 / 5.0),
+            2 => Math.Sqrt(3.0 / 5.0),
+            _ => throw new ArgumentOutOfRangeException(nameof(number), number, "Not expected point number")
+        };
+    
+    public double GetWeight(int number)
+        => number switch
+        {
+            0 => 8.0 / 9.0,
+            1 => 5.0 / 9.0,
+            2 => 5.0 / 9.0,
+            _ => throw new ArgumentOutOfRangeException(nameof(number), number, "Not expected weight number")
+        };
+}

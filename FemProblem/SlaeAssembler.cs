@@ -15,7 +15,7 @@ public class SLAEAssembler
        set => _grid = value ?? throw new ArgumentNullException(nameof(value));
    }
 
-   private Integration _integrator = new Integration(new SegmentGaussOrder9());
+   private Integration _integrator = new Integration(new SegmentGaussOrder5());
    public IBasis2D Basis;
    
    public SparseMatrix GlobalMatrix { get; set; } = default!;
@@ -57,9 +57,10 @@ public class SLAEAssembler
 
         for (int i = 0; i < Basis.Size; i++)
         {
+            var i1 = i;
+            
             for (int j = 0; j <= i; j++)
             {
-                var i1 = i;
                 var j1 = j;
                 var function = double(Point p) =>
                 {

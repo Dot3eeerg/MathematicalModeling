@@ -1,4 +1,5 @@
 ﻿using DataStructures;
+using DataStructures.Geometry;
 using GridBuilder;
 
 namespace FemProblem;
@@ -7,6 +8,7 @@ public class FEM
 {
     private Grid _grid = default!;
     private ITest _test = default!;
+    private IBasis2D _basis = default!;
     private IterativeSolver _iterativeSolver = default!;
     private Vector<double> _localVector = default!;
     private Vector<double> _globalVector = default!;
@@ -15,17 +17,76 @@ public class FEM
     public void SetGrid(Grid grid) => _grid = grid;
     
     public void SetTest(ITest test) => _test = test;
+    
+    public void SetBasis(IBasis2D basis) => _basis = basis;
 
     public void Solve()
     {
         Initialize();
         AssemblySlae();
         AccountDirichletBoundaries();
-        AccountFictitiousNodes();
+        AccountNeumannBoundaries();
+        // AccountFictitiousNodes();
         
         _iterativeSolver.SetMatrix(_slaeAssembler.GlobalMatrix);
         _iterativeSolver.SetVector(_globalVector);
         _iterativeSolver.Compute();
+        
+        SaveSolution("Grid");
+        CalculateError();
+    }
+
+    private void CalculateError()
+    {
+        var error = new double[_grid.Nodes.Count];
+        
+        for (int i = 0; i < error.Length; i++)
+        {
+            if (_grid.FictitiousNodes != null && _grid.FictitiousNodes.Contains(i)) continue;
+            error[i] = Math.Abs(_iterativeSolver.Solution!.Value[i] - _test.U(_grid.Nodes[i]));
+        }
+        
+        Array.ForEach(error, Console.WriteLine);
+        
+        var sum = error.Sum(t => t * t);
+        
+        sum = Math.Sqrt(sum / _grid.Nodes.Count);
+        
+        Console.WriteLine($"rms = {sum}");
+        
+        // using var sw = new StreamWriter("1.csv");
+        //
+        // for (int i = 0; i < error.Length; i++)
+        // {
+        //     if (i == 0)
+        //     {
+        //         Console.WriteLine($"{i}, {_test.U(_grid.Nodes[i])}, {_iterativeSolver.Solution!.Value[i]}, {error[i]}, {sum}");
+        //         sw.WriteLine("$i$, $u_i^*$, $u_i$, $|u^* - u|$, Погрешность");
+        //         sw.WriteLine(
+        //             $"{i}, {_test.U(_grid.Nodes[i])}, {_iterativeSolver.Solution!.Value[i]}, {error[i]}, {sum}");
+        //         continue;
+        //     }
+        //
+        //     if (_grid.FictitiousNodes != null && _grid.FictitiousNodes.Contains(i))
+        //     {
+        //         Console.WriteLine($"{i} Fictiotious node");
+        //     }
+        //     else
+        //     {
+        //         sw.WriteLine($"{i}, {_test.U(_grid.Nodes[i])}, {_iterativeSolver.Solution!.Value[i]}, {error[i]},");
+        //         Console.WriteLine($"{i}, {_test.U(_grid.Nodes[i])}, {_iterativeSolver.Solution!.Value[i]}, {error[i]}, {sum}");
+        //     }
+        // }
+    }
+
+    private void SaveSolution(string folder)
+    {
+        var sw = new StreamWriter($"{folder}/solution");
+        foreach (var value in _iterativeSolver.Solution!)
+        {
+            sw.WriteLine(value);
+        }
+        sw.Close();
     }
     
     private void Initialize()
@@ -38,18 +99,18 @@ public class FEM
             Ig = ig,
             Jg = jg
         };
-        _slaeAssembler.SetBasis(new BiQuadraticBasis());
+        _slaeAssembler.SetBasis(_basis);
         _slaeAssembler.Grid = _grid;
 
         _globalVector = new(ig.Length - 1);
         _localVector = new(_slaeAssembler.Basis.Size);
 
-        _iterativeSolver = new CGMCholesky(5000, 1e-14);
+        _iterativeSolver = new CGMCholesky(5000, 1e-16);
     }
 
     private void AssemblySlae()
     {
-        for (int iElem = 0; iElem < _grid.FiniteElements.Count; iElem++)
+        for (int iElem = 0; iElem < _grid.FiniteElements!.Count; iElem++)
         {
             var element = _grid.FiniteElements[iElem];
 
@@ -78,7 +139,7 @@ public class FEM
             for (int j = 0; j < _slaeAssembler.Basis.Size; j++)
             {
                 _localVector[i] += _slaeAssembler.MassMatrix[i, j] *
-                                   _test.F(_grid.Nodes[_grid.FiniteElements[iElem].Nodes[j]]);
+                                   _test.F(_grid.Nodes![_grid.FiniteElements![iElem].Nodes[j]]);
             }
         }
     }
@@ -111,11 +172,58 @@ public class FEM
         }
     }
 
+    private void AccountNeumannBoundaries()
+    {
+        if (_grid.NeumannEdges != null)
+        {
+            var localMassMatrix = new Matrix(3)
+            {
+                [0, 0] = 4.0 / 30.0,
+                [0, 1] = 2.0 / 30.0,
+                [0, 2] = -1.0 / 30.0,
+                [1, 0] = 2.0 / 30.0,
+                [1, 1] = 16.0 / 30.0,
+                [1, 2] = 2.0 / 30.0,
+                [2, 0] = -1.0 / 30.0,
+                [2, 1] = 2.0 / 30.0,
+                [2, 2] = 4.0 / 30.0,
+            };
+            var thetaFunction = new Vector<double>(3);
+            var result = new Vector<double>(3);
+            
+            foreach (var edge in _grid.NeumannEdges)
+            {
+                double length = Math.Sqrt(
+                    (_grid.Nodes![edge.Node3].X - _grid.Nodes[edge.Node1].X) *
+                    (_grid.Nodes[edge.Node3].X - _grid.Nodes[edge.Node1].X) +
+                    (_grid.Nodes[edge.Node3].Y - _grid.Nodes[edge.Node1].Y) *
+                    (_grid.Nodes[edge.Node3].Y - _grid.Nodes[edge.Node1].Y));
+                
+                thetaFunction[0] = _test.Theta(_grid.Nodes[edge.Node1]);
+                thetaFunction[1] = _test.Theta(_grid.Nodes[edge.Node2]);
+                thetaFunction[2] = _test.Theta(_grid.Nodes[edge.Node3]);
+    
+                for (int i = 0; i < localMassMatrix.Size; i++)
+                {
+                    for (int j = 0; j < localMassMatrix.Size; j++)
+                    {
+                        result[i] += localMassMatrix[i, j] * thetaFunction[j];
+                    }
+                }
+    
+                _globalVector[edge.Node1] += length * _localVector[0];
+                _globalVector[edge.Node2] += length * _localVector[1];
+                _globalVector[edge.Node3] += length * _localVector[2];
+            }
+        }
+    }
+
     private void AccountFictitiousNodes()
     {
         foreach (var node in _grid.FictitiousNodes!)
         {
             _slaeAssembler.GlobalMatrix.Di[node] = 1;
+            _globalVector[node] = 0;
         }
     }
 }

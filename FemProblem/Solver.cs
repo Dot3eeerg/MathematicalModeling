@@ -131,8 +131,6 @@ public class CGMCholesky : IterativeSolver
             _matrix.Gg.Copy(ggnew);
             _matrix.Di.Copy(dinew);
 
-            Stopwatch sw = Stopwatch.StartNew();
-
             Cholesky(ggnew, dinew);
 
             var r = _vector - _matrix * _solution;
@@ -149,11 +147,8 @@ public class CGMCholesky : IterativeSolver
                 var beta = fstTemp * r / tmp;
                 z = fstTemp + beta * z;
             }
-            
-            sw.Stop();
-
-            _runningTime = sw.Elapsed;
         }
+        
         catch (ArgumentNullException ex)
         {
             Console.WriteLine($"We had problem: {ex.Message}");

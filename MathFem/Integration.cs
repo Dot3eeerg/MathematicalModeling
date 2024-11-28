@@ -2,7 +2,7 @@
 
 namespace MathFem;
 
-public class Integration(SegmentGaussOrder9 quadratures)
+public class Integration(SegmentGaussOrder5 quadratures)
 {
     private Point _point = new Point(0.0, 0.0);
     
@@ -17,15 +17,15 @@ public class Integration(SegmentGaussOrder9 quadratures)
         for (int i = 0; i < quadratures.Size; i++)
         {
             _point.X = (quadratures.GetPoint(i) * hx + element.LeftBottom.X + element.RightTop.X) / 2.0;
-
+        
             for (int j = 0; j < quadratures.Size; j++)
             {
                 _point.Y = (quadratures.GetPoint(j) * hy + element.RightBottom.Y + element.RightTop.Y) / 2.0;
-
+        
                 result += psi(_point) * quadratures.GetWeight(i) * quadratures.GetWeight(j);
             }
         }
 
-        return result / 4.0;
+        return result * hx * hy / 4.0;
     }
 }

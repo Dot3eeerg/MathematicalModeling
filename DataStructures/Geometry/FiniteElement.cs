@@ -44,7 +44,7 @@ public readonly record struct FiniteElement(IReadOnlyList<int> Nodes, double Mat
                 return $"{Nodes[0]} {Nodes[1]} {Nodes[3]} {Nodes[2]} {Material}";
             
             case FiniteElementType.Quadratic:
-                return $"{Nodes[0]} {Nodes[1]} {Nodes[2]} {Nodes[5]} {Nodes[8]} {Nodes[7]} {Nodes[6]} {Nodes[3]} {Material}";
+                return $"{Nodes[0]} {Nodes[1]} {Nodes[2]} {Nodes[5]} {Nodes[8]} {Nodes[7]} {Nodes[6]} {Nodes[3]} {Material} {Nodes[4]}";
             
             default:
                 throw new ArgumentOutOfRangeException($"Cannot find finite element type");
