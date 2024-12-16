@@ -6,7 +6,9 @@ public enum FiniteElementType
     Quadratic,
 }
 
-public readonly record struct FiniteElement(IReadOnlyList<int> Nodes, double Material, FiniteElementType FiniteElementType)
+public record struct Material(double Lambda, double Gamma);
+
+public readonly record struct FiniteElement(IReadOnlyList<int> Nodes, Material ElementMaterial, FiniteElementType FiniteElementType)
 {
     public string PrintByBasis()
     {
@@ -41,10 +43,10 @@ public readonly record struct FiniteElement(IReadOnlyList<int> Nodes, double Mat
         switch (FiniteElementType)
         {
             case FiniteElementType.Linear:
-                return $"{Nodes[0]} {Nodes[1]} {Nodes[3]} {Nodes[2]} {Material}";
+                return $"{Nodes[0]} {Nodes[1]} {Nodes[3]} {Nodes[2]} {ElementMaterial.Lambda}";
             
             case FiniteElementType.Quadratic:
-                return $"{Nodes[0]} {Nodes[1]} {Nodes[2]} {Nodes[5]} {Nodes[8]} {Nodes[7]} {Nodes[6]} {Nodes[3]} {Material} {Nodes[4]}";
+                return $"{Nodes[0]} {Nodes[1]} {Nodes[2]} {Nodes[5]} {Nodes[8]} {Nodes[7]} {Nodes[6]} {Nodes[3]} {ElementMaterial.Lambda} {Nodes[4]}";
             
             default:
                 throw new ArgumentOutOfRangeException($"Cannot find finite element type");

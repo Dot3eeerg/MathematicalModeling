@@ -101,6 +101,7 @@ struct GridPlotter {
     zoom_speed: f32,
     scroll_speed: f32,
     show_grid: bool,
+    show_materials: bool,
     show_heatmap: bool,
     show_contours: bool,
     points: Vec<(f64, f64)>,
@@ -124,8 +125,9 @@ impl Default for GridPlotter {
             zoom_speed: 1.0,
             scroll_speed: 1.0,
             show_grid: true,
-            show_heatmap: true,
-            show_contours: true,
+            show_materials: false,
+            show_heatmap: false,
+            show_contours: false,
             show_numbers: false,
             show_points: false,
             points: Vec::new(),
@@ -157,6 +159,7 @@ impl GridPlotter {
             zoom_speed: 1.0,
             scroll_speed: 1.0,
             show_grid: true,
+            show_materials: false,
             show_heatmap: true,
             show_contours: true,
             show_numbers: false,
@@ -184,20 +187,15 @@ impl GridPlotter {
 
         for element in &self.elements {
             if element.len() == 10 {
-                // Create 8 triangles (2 for each rectangle)
-                // First rectangle (top left)
                 triangles.push(vec![element[0], element[1], element[9]]);
                 triangles.push(vec![element[0], element[9], element[7]]);
 
-                // Second rectangle (top right)
                 triangles.push(vec![element[1], element[2], element[9]]);
                 triangles.push(vec![element[2], element[3], element[9]]);
 
-                // Third rectangle (bottom right)
                 triangles.push(vec![element[9], element[3], element[4]]);
                 triangles.push(vec![element[9], element[4], element[5]]);
 
-                // Fourth rectangle (bottom left)
                 triangles.push(vec![element[7], element[9], element[6]]);
                 triangles.push(vec![element[9], element[5], element[6]]);
             }
@@ -244,6 +242,104 @@ impl GridPlotter {
             }
         }
     }
+
+    fn build_isolines(&self, plot_ui: &mut egui_plot::PlotUi) {
+        let maximum = *self
+            .solution
+            .iter()
+            .max_by(|a, b| a.partial_cmp(b).unwrap())
+            .unwrap();
+        let minimum = *self
+            .solution
+            .iter()
+            .min_by(|a, b| a.partial_cmp(b).unwrap())
+            .unwrap();
+        let step = (maximum - minimum) / (self.isolines_count as f64);
+
+        for i in 0..=self.isolines_count {
+            let level = minimum + (i as f64) * step;
+            let mut isoline_segments: Vec<([f64; 2], [f64; 2])> = Vec::new();
+
+            for triangle in &self.triangles_vector {
+                let vertices: Vec<(Point, f64)> = triangle
+                    .iter()
+                    .take(3)
+                    .map(|&idx| {
+                        let point = Point {
+                            x: self.points[idx].0,
+                            y: self.points[idx].1,
+                        };
+                        let value = self.solution[idx];
+                        (point, value)
+                    })
+                    .collect();
+
+                let signs: Vec<bool> = vertices.iter().map(|(_, value)| *value >= level).collect();
+
+                if signs.iter().all(|&x| x) || signs.iter().all(|&x| !x) {
+                    continue;
+                }
+
+                let mut intersections: Vec<[f64; 2]> = Vec::new();
+
+                for i in 0..3 {
+                    let j = (i + 1) % 3;
+                    if signs[i] != signs[j] {
+                        let (p1, v1) = &vertices[i];
+                        let (p2, v2) = &vertices[j];
+
+                        let t = (level - v1) / (v2 - v1);
+                        let intersection = [p1.x + t * (p2.x - p1.x), p1.y + t * (p2.y - p1.y)];
+
+                        intersections.push(intersection);
+                    }
+                }
+
+                if intersections.len() == 2 {
+                    isoline_segments.push((intersections[0], intersections[1]));
+                }
+            }
+
+            Self::connect_segments(&mut isoline_segments);
+
+            for segment in isoline_segments {
+                let points = vec![segment.0, segment.1];
+                let plot_points: PlotPoints = points.into();
+                plot_ui.line(
+                    Line::new(plot_points)
+                        .color(Color32::from_rgb(0, 100, 0))
+                        .width(2.0),
+                );
+            }
+        }
+    }
+
+    fn connect_segments(segments: &mut Vec<([f64; 2], [f64; 2])>) {
+        let tolerance = 1e-10;
+        let mut i = 0;
+        while i < segments.len() {
+            let mut j = i + 1;
+            while j < segments.len() {
+                let (start1, end1) = segments[i];
+                let (start2, end2) = segments[j];
+
+                if Self::distance(end1, start2) < tolerance {
+                    segments[i].1 = end2;
+                    segments.remove(j);
+                } else if Self::distance(end1, end2) < tolerance {
+                    segments[i].1 = start2;
+                    segments.remove(j);
+                } else {
+                    j += 1;
+                }
+            }
+            i += 1;
+        }
+    }
+
+    fn distance(p1: [f64; 2], p2: [f64; 2]) -> f64 {
+        ((p2[0] - p1[0]).powi(2) + (p2[1] - p1[1]).powi(2)).sqrt()
+    }
 }
 
 impl eframe::App for GridPlotter {
@@ -254,11 +350,12 @@ impl eframe::App for GridPlotter {
             ui.checkbox(&mut self.ctrl_to_zoom, "Ctrl to zoom").on_hover_text("If unchecked, the behavior of the Ctrl key is inverted compared to the default controls\ni.e., scrolling the mouse without pressing any keys zooms the plot");
             ui.checkbox(&mut self.shift_to_horizontal, "Shift for horizontal scroll").on_hover_text("If unchecked, the behavior of the shift key is inverted compared to the default controls\ni.e., hold to scroll vertically, release to scroll horizontally");
             ui.checkbox(&mut self.show_grid,"Show grid").on_hover_text("Check to show grid on plot");
+            ui.checkbox(&mut self.show_materials,"Show grid materials").on_hover_text("Check to show grid materials on plot");
             ui.checkbox(&mut self.show_heatmap, "Show heatmap").on_hover_text("Check to show solution heatmap");
             ui.checkbox(&mut self.show_contours, "Show contours").on_hover_text("Check to show solution contour lines");
             ui.checkbox(&mut self.show_triangles, "Show triangulate grid").on_hover_text("Check to show triangulate grid");
             ui.checkbox(&mut self.show_points, "Show points on grid").on_hover_text("Check to show points");
-            ui.checkbox(&mut self.show_numbers, "Show points numbers on grid").on_hover_text("Check to show point numbers");
+            ui.checkbox(&mut self.show_numbers, "Show point numbers on grid").on_hover_text("Check to show point numbers");
             ui.horizontal(|ui| {
                 ui.label("Isolines amount");
                 integer_edit_field(ui, &mut self.isolines_count);
@@ -389,81 +486,36 @@ impl eframe::App for GridPlotter {
                                     .map(|&i| [self.points[i].0, self.points[i].1])
                                     .collect();
 
-                                let color = match element[8] {
-                                    0 => Color32::LIGHT_BLUE,
-                                    1 => Color32::GREEN,
-                                    2 => Color32::GRAY,
-                                    3 => Color32::KHAKI,
-                                    4 => Color32::DARK_RED,
-                                    5 => Color32::YELLOW,
-                                    _ => Color32::BLACK,
-                                };
+                                if self.show_materials {
+                                    let color = match element[8] {
+                                        0 => Color32::LIGHT_BLUE,
+                                        1 => Color32::GREEN,
+                                        2 => Color32::GRAY,
+                                        3 => Color32::KHAKI,
+                                        4 => Color32::DARK_RED,
+                                        5 => Color32::YELLOW,
+                                        _ => Color32::BLACK,
+                                    };
 
-                                plot_ui.polygon(
-                                    Polygon::new(vertices)
-                                        .fill_color(color)
-                                        .stroke(egui::Stroke::new(1.0, egui::Color32::DARK_GRAY)),
-                                );
+                                    plot_ui.polygon(
+                                        Polygon::new(vertices).fill_color(color).stroke(
+                                            egui::Stroke::new(1.0, egui::Color32::DARK_GRAY),
+                                        ),
+                                    );
+                                } else {
+                                    plot_ui.polygon(
+                                        Polygon::new(vertices).stroke(egui::Stroke::new(
+                                            1.0,
+                                            egui::Color32::DARK_GRAY,
+                                        )),
+                                    );
+                                }
                             }
                         }
                     }
 
                     if self.show_contours {
-                        let mut binary_map: Vec<usize> = Vec::with_capacity(self.solution.len());
-                        let mut points_to_render: Vec<[f64; 2]> = Vec::new();
-
-                        let _step = (maximum - minimum) / (self.isolines_count as f64);
-
-                        for i in 0..self.isolines_count + 1 {
-                            let limit = minimum + (i as f64) * _step;
-
-                            make_binary_map(limit, &mut binary_map, self);
-
-                            for i in 0..self.triangles_vector.len() - 1 {
-                                let state = self.get_element_state(i, binary_map.clone());
-
-                                if state == 0 || state == 7 {
-                                    continue;
-                                }
-
-                                let p1 = Point {
-                                    x: self.points[self.points_vector[0]].0,
-                                    y: self.points[self.points_vector[0]].1,
-                                };
-                                let p2 = Point {
-                                    x: self.points[self.points_vector[1]].0,
-                                    y: self.points[self.points_vector[1]].1,
-                                };
-                                let p3 = Point {
-                                    x: self.points[self.points_vector[2]].0,
-                                    y: self.points[self.points_vector[2]].1,
-                                };
-
-                                points_to_render.push(interpolate_value(
-                                    &p1,
-                                    &p2,
-                                    self.solution[self.points_vector[0]],
-                                    self.solution[self.points_vector[1]],
-                                    limit,
-                                ));
-
-                                points_to_render.push(interpolate_value(
-                                    &p1,
-                                    &p3,
-                                    self.solution[self.points_vector[0]],
-                                    self.solution[self.points_vector[2]],
-                                    limit,
-                                ));
-                            }
-                            let plot_points: PlotPoints = points_to_render
-                                .iter()
-                                .map(|&[x, y]| [x, y])
-                                .collect::<Vec<[f64; 2]>>()
-                                .into();
-                            plot_ui.line(Line::new(plot_points).color(Color32::DARK_GREEN));
-
-                            points_to_render.clear();
-                        }
+                        self.build_isolines(plot_ui);
                     }
 
                     if self.show_points {
@@ -491,35 +543,43 @@ impl eframe::App for GridPlotter {
                                 );
                             }
                         }
-                    }
 
-                    let dirichlet_points: Vec<_> =
-                        self.dirichlet.iter().map(|&i| self.points[i]).collect();
-                    let dirichlet_plot_points: PlotPoints = dirichlet_points
-                        .into_iter()
-                        .map(|(x, y)| [x, y])
-                        .collect::<Vec<[f64; 2]>>()
-                        .into();
-                    plot_ui.points(
-                        egui_plot::Points::new(dirichlet_plot_points)
-                            .name("Dirichlet")
-                            .shape(egui_plot::MarkerShape::Circle)
-                            .radius(5.0)
-                            .color(egui::Color32::ORANGE),
-                    );
+                        let dirichlet_points: Vec<_> =
+                            self.dirichlet.iter().map(|&i| self.points[i]).collect();
+                        let dirichlet_plot_points: PlotPoints = dirichlet_points
+                            .into_iter()
+                            .map(|(x, y)| [x, y])
+                            .collect::<Vec<[f64; 2]>>()
+                            .into();
+                        plot_ui.points(
+                            egui_plot::Points::new(dirichlet_plot_points)
+                                .name("Dirichlet")
+                                .shape(egui_plot::MarkerShape::Circle)
+                                .radius(5.0)
+                                .color(egui::Color32::ORANGE),
+                        );
 
-                    for neumann_edge in &self.neumann {
-                        if neumann_edge.len() == 2 {
-                            let neumann_plot_points: Vec<_> = neumann_edge
-                                .iter()
-                                .map(|&i| [self.points[i].0, self.points[i].1])
-                                .collect();
-                            plot_ui.line(
-                                egui_plot::Line::new(neumann_plot_points)
-                                    .name("Neumann Edges")
-                                    .color(Color32::RED)
-                                    .width(2.0),
-                            );
+                        for neumann_edge in &self.neumann {
+                            if neumann_edge.len() == 3 {
+                                let neumann_plot_points: Vec<_> = neumann_edge
+                                    .iter()
+                                    .map(|&i| [self.points[i].0, self.points[i].1])
+                                    .collect();
+                                plot_ui.line(
+                                    egui_plot::Line::new(neumann_plot_points.clone())
+                                        .name("Neumann Edges")
+                                        .color(Color32::RED)
+                                        .width(2.0),
+                                );
+
+                                plot_ui.points(
+                                    egui_plot::Points::new(neumann_plot_points)
+                                        .name("Neumann Edges")
+                                        .shape(egui_plot::MarkerShape::Circle)
+                                        .radius(5.0)
+                                        .color(egui::Color32::RED),
+                                );
+                            }
                         }
                     }
                 });
@@ -537,7 +597,7 @@ fn integer_edit_field(ui: &mut egui::Ui, value: &mut u16) -> egui::Response {
 }
 
 fn interpolate_heat_color(value: f64, max: f64, min: f64) -> Color32 {
-    let normalized = (value - min) / max - min;
+    let normalized = (value - min) / (max - min);
     let r = (normalized * 255.0) as u8;
     let b = ((1.0 - normalized) * 255.0) as u8;
     Color32::from_rgb(r, 0, b)
@@ -549,16 +609,4 @@ fn interpolate_value(p1: &Point, p2: &Point, v1: f64, v2: f64, v: f64) -> [f64; 
     let y = p1.y + t * (p2.y - p1.y);
     let p: [f64; 2] = [x, y];
     p
-}
-
-fn make_binary_map(limit: f64, array: &mut Vec<usize>, grid_plotter: &GridPlotter) {
-    array.clear();
-
-    for i in 0..array.capacity() {
-        if grid_plotter.solution[i] < limit {
-            array.push(0);
-        } else {
-            array.push(1);
-        }
-    }
 }

@@ -2,19 +2,20 @@
   "X interval":
   {
     "LeftBorder": 0.0,
-    "RightBorder": 3.0
+    "RightBorder": 1.0
   },
-  "X inner splits": 6,
+  "X inner splits": 5,
   "X coefficient": 1,
   "Y interval":
   {
     "LeftBorder": 0.0,
-    "RightBorder": 3.0
+    "RightBorder": 1.0
   },
-  "Y inner splits": 6,
+  "Y inner splits": 5,
   "Y coefficient": 1,
-  "Radius": 10,
-  "Circle splits": 8,
+  "Radius": 5.5,
+  "Circle splits": 10,
+  "Circle radius splits": 5,
   "Circle coefficient": 1,
   "Circle tear":
   {
@@ -27,15 +28,27 @@
   "Bottom border": 1,
   "Circle border": 1,
   "Circle tear border": 1,
-  "Material": 1,
+  "Material": 
+  {
+    "Lambda": 2.0,
+    "Gamma": 2.0
+  },
   "Circle materials": [
     {
       "Degrees": 30.01,
-      "Material": 1.0
+      "Material":
+      {
+        "Lambda": 2.0,
+        "Gamma": 1.5
+      }
     },
     {
       "Degrees": 90.01,
-      "Material": 1.0
+      "Material":
+      {
+        "Lambda": 3.0,
+        "Gamma": 4.0
+      }
     }
   ]
 }

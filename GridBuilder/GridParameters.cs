@@ -13,13 +13,14 @@ public class GridParameters(
     int yInnerSplits,
     double yCoefficient,
     int circleSplits,
+    int circleRadiusSplits,
     double circleCoefficient,
     CircleFragmentation circleTear,
     byte leftBorder,
     byte bottomBorder,
     byte circleBorder,
     byte circleTearBorder,
-    double material,
+    Material material,
     IEnumerable<CircleMaterial> circleMaterials)
 {
     public double Radius { get; } = radius;
@@ -44,6 +45,9 @@ public class GridParameters(
     
     [JsonProperty("Circle splits"), JsonRequired]
     public int CircleSplits { get; } = circleSplits;
+    
+    [JsonProperty("Circle radius splits"), JsonRequired]
+    public int CircleRadiusSplits { get; } = circleRadiusSplits;
 
     [JsonProperty("Circle coefficient"), JsonRequired]
     public double CircleCoefficient { get; } = circleCoefficient;
@@ -63,7 +67,7 @@ public class GridParameters(
     [JsonProperty("Circle tear border"), JsonRequired]
     public byte CircleTearBorder { get; } = circleTearBorder;
 
-    public double Material { get; } = material;
+    public Material Material { get; } = material;
     
     [JsonProperty("Circle materials"), JsonRequired]
     public IReadOnlyList<CircleMaterial> CircleMaterials { get; } = circleMaterials.ToList();

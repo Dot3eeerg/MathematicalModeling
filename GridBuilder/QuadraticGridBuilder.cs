@@ -8,7 +8,7 @@ public class QuadraticGridBuilder
     
     private Point[] _points = null!;
     private List<FiniteElement> _finiteElements = null!;
-    private readonly List<double> _circleMaterials = new();
+    private readonly List<Material> _circleMaterials = new();
     private readonly HashSet<int> _dirichletBoundaries = new();
     private readonly HashSet<Edge3> _neumannBoundaries = new();
     private readonly HashSet<int> _fictitiousPoints = new();
@@ -45,7 +45,7 @@ public class QuadraticGridBuilder
         double[] x = new double[innerX + 2 * Parameters.CircleSplits];
         double[] y = new double[innerY + 2 * Parameters.CircleSplits];
         
-        _points = new Point[innerX * innerY + 2 * circleSplits * Parameters.CircleSplits];
+        _points = new Point[innerX * innerY + 2 * circleSplits * Parameters.CircleRadiusSplits];
 
         double xPoint = Parameters.XInterval.LeftBorder;
         double hx = Math.Abs(Parameters.XCoefficient - 1.0) < 1e-14
@@ -54,9 +54,9 @@ public class QuadraticGridBuilder
               (1.0 - Math.Pow(Parameters.XCoefficient, Parameters.XInnerSplits));
         double xCirclePoint = Parameters.XInterval.RightBorder;
         double hxCircle = Math.Abs(Parameters.CircleCoefficient- 1.0) < 1e-14
-            ? Parameters.Radius / Parameters.CircleSplits
+            ? Parameters.Radius / Parameters.CircleRadiusSplits
             : Parameters.Radius * (1.0 - Parameters.CircleCoefficient) /
-              (1.0 - Math.Pow(Parameters.CircleCoefficient, Parameters.CircleSplits));
+              (1.0 - Math.Pow(Parameters.CircleCoefficient, Parameters.CircleRadiusSplits));
         xCirclePoint += hxCircle / 2.0;
         
         for (int i = 0; i < 2 * Parameters.XInnerSplits; i++)
@@ -69,7 +69,7 @@ public class QuadraticGridBuilder
         }
         x[2 * Parameters.XInnerSplits] = xPoint;
 
-        for (int i = 0; i < 2 * Parameters.CircleSplits; i++)
+        for (int i = 0; i < 2 * Parameters.CircleRadiusSplits; i++)
         {
             x[innerX + i++] = xCirclePoint;
             xCirclePoint += hxCircle / 2.0;
@@ -85,9 +85,9 @@ public class QuadraticGridBuilder
               (1.0 - Math.Pow(Parameters.YCoefficient, Parameters.YInnerSplits));
         double yCirclePoint = Parameters.YInterval.RightBorder;
         double hyCircle = Math.Abs(Parameters.CircleCoefficient- 1.0) < 1e-14
-            ? Parameters.Radius / Parameters.CircleSplits
+            ? Parameters.Radius / Parameters.CircleRadiusSplits
             : Parameters.Radius * (1.0 - Parameters.CircleCoefficient) /
-              (1.0 - Math.Pow(Parameters.CircleCoefficient, Parameters.CircleSplits));
+              (1.0 - Math.Pow(Parameters.CircleCoefficient, Parameters.CircleRadiusSplits));
         yCirclePoint += hyCircle / 2.0;
         
         for (int i = 0; i < 2 * Parameters.YInnerSplits; i++)
@@ -100,7 +100,7 @@ public class QuadraticGridBuilder
         }
         y[2 * Parameters.YInnerSplits] = yPoint;
 
-        for (int i = 0; i < 2 * Parameters.CircleSplits; i++)
+        for (int i = 0; i < 2 * Parameters.CircleRadiusSplits; i++)
         {
             y[innerY + i++] = yCirclePoint;
             yCirclePoint += hyCircle / 2.0;
@@ -161,13 +161,27 @@ public class QuadraticGridBuilder
         }
         
         // Circle scope
-        for (int i = 0; i < 2 * Parameters.CircleSplits - 2; i+=2)
+        for (int i = 0; i < 2 * Parameters.CircleRadiusSplits - 2; i+=2)
         {
             double radius = x[innerX + i + 3];
+            var angle = 0.0;
         
             for (int j = 0; j < innerX + innerY - 1; j+=2)
             {
-                var angle = j * theta / 2.0;
+                if (j == 0)
+                {
+                    // angle = 1.53846 * 1e-6;
+                    angle = j * theta / 2.0;
+                }
+                else if (j == 2)
+                {
+                    // angle = 6.153846 * 1e-6;
+                    angle = j * theta / 2.0;
+                }
+                else
+                {
+                    angle = j * theta / 2.0;
+                }
                 
                 points[j] = new(radius * Math.Cos(angle), radius * Math.Sin(angle));
 
@@ -305,8 +319,8 @@ public class QuadraticGridBuilder
         _leftBorderElements.Add(_finiteElements.Count - 1);
 
         // Circle scope
-        int depth = Parameters.CircleSplits - 1;
-        for (int i = 0; i < Parameters.CircleSplits - 1; i++)
+        int depth = Parameters.CircleRadiusSplits - 1;
+        for (int i = 0; i < Parameters.CircleRadiusSplits - 1; i++)
         {
             materialCounter = 0;
             for (int j = 0; j < (innerX + innerY - 2) / 2; j++)
@@ -423,11 +437,11 @@ public class QuadraticGridBuilder
                     _leftBorderElements.Add(_finiteElements.Count - 1);
                 }
 
-                if (j < (innerX + innerY - 2) / 4 && i == Parameters.CircleSplits - 2)
+                if (j < (innerX + innerY - 2) / 4 && i == Parameters.CircleRadiusSplits - 2)
                 {
                     _rightBorderElements.Add(_finiteElements.Count - 1);
                 }
-                else if (j >= (innerX + innerY - 2) / 4 && i == Parameters.CircleSplits - 2)
+                else if (j >= (innerX + innerY - 2) / 4 && i == Parameters.CircleRadiusSplits - 2)
                 {
                     _topBorderElements.Add(_finiteElements.Count - 1);
                 }
@@ -484,7 +498,8 @@ public class QuadraticGridBuilder
                     break;
                 case 2:
                     _neumannBoundaries.Add(new Edge3(_finiteElements[element].Nodes[0],
-                        _finiteElements[element].Nodes[3], _finiteElements[element].Nodes[6]));
+                        _finiteElements[element].Nodes[3], _finiteElements[element].Nodes[6],
+                        _finiteElements[element].ElementMaterial));
                     break;
             }
         }
@@ -500,7 +515,8 @@ public class QuadraticGridBuilder
                     break;
                 case 2:
                     _neumannBoundaries.Add(new Edge3(_finiteElements[element].Nodes[0],
-                        _finiteElements[element].Nodes[1], _finiteElements[element].Nodes[2]));
+                        _finiteElements[element].Nodes[1], _finiteElements[element].Nodes[2],
+                        _finiteElements[element].ElementMaterial));
                     break;
             }
         }
@@ -516,7 +532,8 @@ public class QuadraticGridBuilder
                     break;
                 case 2:
                     _neumannBoundaries.Add(new Edge3(_finiteElements[element].Nodes[6],
-                        _finiteElements[element].Nodes[7], _finiteElements[element].Nodes[8]));
+                        _finiteElements[element].Nodes[7], _finiteElements[element].Nodes[8],
+                        _finiteElements[element].ElementMaterial));
                     break;
             }
         }
@@ -532,7 +549,8 @@ public class QuadraticGridBuilder
                     break;
                 case 2:
                     _neumannBoundaries.Add(new Edge3(_finiteElements[element].Nodes[2],
-                        _finiteElements[element].Nodes[5], _finiteElements[element].Nodes[8]));
+                        _finiteElements[element].Nodes[5], _finiteElements[element].Nodes[8],
+                        _finiteElements[element].ElementMaterial));
                     break;
             }
         }
@@ -548,7 +566,8 @@ public class QuadraticGridBuilder
                     break;
                 case 2:
                     _neumannBoundaries.Add(new Edge3(_finiteElements[element].Nodes[6],
-                        _finiteElements[element].Nodes[7], _finiteElements[element].Nodes[8]));
+                        _finiteElements[element].Nodes[7], _finiteElements[element].Nodes[8],
+                        _finiteElements[element].ElementMaterial));
                     break;
             }
         }
@@ -564,7 +583,8 @@ public class QuadraticGridBuilder
                     break;
                 case 2:
                     _neumannBoundaries.Add(new Edge3(_finiteElements[element].Nodes[2],
-                        _finiteElements[element].Nodes[5], _finiteElements[element].Nodes[8]));
+                        _finiteElements[element].Nodes[5], _finiteElements[element].Nodes[8],
+                        _finiteElements[element].ElementMaterial));
                     break;
             }
         }

@@ -92,21 +92,16 @@ public class SLAEAssembler
                     _integrator.Gauss2D(function, templateElement);
             }
         }
-
+        
         for (int i = 0; i < Basis.Size; i++)
         {
             for (int j = 0; j <= i; j++)
             {
                 StiffnessMatrix[i, j] =
-                    StiffnessMatrix[j, i] = _grid.FiniteElements![iElem].Material * StiffnessMatrix[i, j];
-            }
-        }
-
-        for (int i = 0; i < Basis.Size; i++)
-        {
-            for (int j = 0; j <= i; j++)
-            {
-                MassMatrix[i, j] = MassMatrix[j, i] = MassMatrix[i, j];
+                    StiffnessMatrix[j, i] =
+                        _grid.FiniteElements![iElem].ElementMaterial.Lambda * StiffnessMatrix[i, j] +
+                        _grid.FiniteElements[iElem].ElementMaterial.Gamma * MassMatrix[i, j];
+                // _grid.FiniteElements![iElem].Material * StiffnessMatrix[i, j];
             }
         }
     }

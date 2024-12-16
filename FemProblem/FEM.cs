@@ -24,9 +24,9 @@ public class FEM
     {
         Initialize();
         AssemblySlae();
-        AccountDirichletBoundaries();
         AccountNeumannBoundaries();
-        // AccountFictitiousNodes();
+        AccountDirichletBoundaries();
+        AccountFictitiousNodes();
         
         _iterativeSolver.SetMatrix(_slaeAssembler.GlobalMatrix);
         _iterativeSolver.SetVector(_globalVector);
@@ -61,7 +61,7 @@ public class FEM
         //     if (i == 0)
         //     {
         //         Console.WriteLine($"{i}, {_test.U(_grid.Nodes[i])}, {_iterativeSolver.Solution!.Value[i]}, {error[i]}, {sum}");
-        //         sw.WriteLine("$i$, $u_i^*$, $u_i$, $|u^* - u|$, Погрешность");
+        //         // sw.WriteLine("$i$, $u_i^*$, $u_i$, $|u^* - u|$, Погрешность");
         //         sw.WriteLine(
         //             $"{i}, {_test.U(_grid.Nodes[i])}, {_iterativeSolver.Solution!.Value[i]}, {error[i]}, {sum}");
         //         continue;
@@ -139,7 +139,8 @@ public class FEM
             for (int j = 0; j < _slaeAssembler.Basis.Size; j++)
             {
                 _localVector[i] += _slaeAssembler.MassMatrix[i, j] *
-                                   _test.F(_grid.Nodes![_grid.FiniteElements![iElem].Nodes[j]]);
+                                   _test.F(_grid.Nodes![_grid.FiniteElements![iElem].Nodes[j]],
+                                       _grid.FiniteElements[iElem].ElementMaterial);
             }
         }
     }
@@ -189,7 +190,6 @@ public class FEM
                 [2, 2] = 4.0 / 30.0,
             };
             var thetaFunction = new Vector<double>(3);
-            var result = new Vector<double>(3);
             
             foreach (var edge in _grid.NeumannEdges)
             {
@@ -199,21 +199,23 @@ public class FEM
                     (_grid.Nodes[edge.Node3].Y - _grid.Nodes[edge.Node1].Y) *
                     (_grid.Nodes[edge.Node3].Y - _grid.Nodes[edge.Node1].Y));
                 
-                thetaFunction[0] = _test.Theta(_grid.Nodes[edge.Node1]);
-                thetaFunction[1] = _test.Theta(_grid.Nodes[edge.Node2]);
-                thetaFunction[2] = _test.Theta(_grid.Nodes[edge.Node3]);
+                thetaFunction[0] = _test.Theta(_grid.Nodes[edge.Node1], edge.Material);
+                thetaFunction[1] = _test.Theta(_grid.Nodes[edge.Node2], edge.Material);
+                thetaFunction[2] = _test.Theta(_grid.Nodes[edge.Node3],edge.Material);
     
                 for (int i = 0; i < localMassMatrix.Size; i++)
                 {
                     for (int j = 0; j < localMassMatrix.Size; j++)
                     {
-                        result[i] += localMassMatrix[i, j] * thetaFunction[j];
+                        _localVector[i] += localMassMatrix[i, j] * thetaFunction[j];
                     }
                 }
     
                 _globalVector[edge.Node1] += length * _localVector[0];
                 _globalVector[edge.Node2] += length * _localVector[1];
                 _globalVector[edge.Node3] += length * _localVector[2];
+                
+                _localVector.Fill(0.0);
             }
         }
     }
