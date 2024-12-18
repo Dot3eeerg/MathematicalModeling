@@ -12,7 +12,7 @@ grid.SaveGrid("Grid");
 
 FEM fem = new FEM();
 fem.SetGrid(grid);
-fem.SetTest(new Test3());
+fem.SetTest(new Test2());
 fem.SetBasis(new BiQuadraticBasis());
 fem.Solve();
 

@@ -26,7 +26,7 @@ public class Test2 : ITest
     
     public double F(Point p, Material material) => material.Gamma * 4 * p.X;
     
-    public double Theta(Point p, Material material) => -4;
+    public double Theta(Point p, Material material) => -4 * material.Lambda;
 }
 
 public class Test3 : ITest

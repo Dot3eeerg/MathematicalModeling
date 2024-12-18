@@ -35,7 +35,15 @@
   },
   "Circle materials": [
     {
-      "Degrees": 30.01,
+      "Degrees": 10.01,
+      "Material":
+      {
+        "Lambda": 2.0,
+        "Gamma": 1.5
+      }
+    },
+    {
+      "Degrees": 80.01,
       "Material":
       {
         "Lambda": 2.0,
@@ -46,7 +54,7 @@
       "Degrees": 90.01,
       "Material":
       {
-        "Lambda": 3.0,
+        "Lambda": 1.0,
         "Gamma": 4.0
       }
     }

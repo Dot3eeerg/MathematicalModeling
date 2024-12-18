@@ -42,8 +42,8 @@ public class QuadraticGridBuilder
 
         int circleSplits = innerX + innerY - 1;
         
-        double[] x = new double[innerX + 2 * Parameters.CircleSplits];
-        double[] y = new double[innerY + 2 * Parameters.CircleSplits];
+        double[] x = new double[innerX + 2 * Parameters.CircleRadiusSplits];
+        double[] y = new double[innerY + 2 * Parameters.CircleRadiusSplits];
         
         _points = new Point[innerX * innerY + 2 * circleSplits * Parameters.CircleRadiusSplits];
 
@@ -52,7 +52,8 @@ public class QuadraticGridBuilder
             ? Parameters.XInterval.Length / Parameters.XInnerSplits
             : Parameters.XInterval.Length * (1.0 - Parameters.XCoefficient) /
               (1.0 - Math.Pow(Parameters.XCoefficient, Parameters.XInnerSplits));
-        double xCirclePoint = Parameters.XInterval.RightBorder;
+        double xCirclePoint = Math.Sqrt(Parameters.XInterval.RightBorder * Parameters.XInterval.RightBorder +
+                                        Parameters.YInterval.RightBorder * Parameters.YInterval.RightBorder);
         double hxCircle = Math.Abs(Parameters.CircleCoefficient- 1.0) < 1e-14
             ? Parameters.Radius / Parameters.CircleRadiusSplits
             : Parameters.Radius * (1.0 - Parameters.CircleCoefficient) /
@@ -83,7 +84,8 @@ public class QuadraticGridBuilder
             ? Parameters.YInterval.Length / Parameters.YInnerSplits
             : Parameters.YInterval.Length * (1.0 - Parameters.YCoefficient) /
               (1.0 - Math.Pow(Parameters.YCoefficient, Parameters.YInnerSplits));
-        double yCirclePoint = Parameters.YInterval.RightBorder;
+        double yCirclePoint = Math.Sqrt(Parameters.YInterval.RightBorder * Parameters.YInterval.RightBorder +
+                                        Parameters.XInterval.RightBorder * Parameters.XInterval.RightBorder);
         double hyCircle = Math.Abs(Parameters.CircleCoefficient- 1.0) < 1e-14
             ? Parameters.Radius / Parameters.CircleRadiusSplits
             : Parameters.Radius * (1.0 - Parameters.CircleCoefficient) /
