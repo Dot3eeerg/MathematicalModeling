@@ -20,6 +20,9 @@ public class QuadraticGridBuilder
     private readonly HashSet<int> _topBorderElements = new();
     private readonly HashSet<int> _rightTearBorderElements = new();
     private readonly HashSet<int> _topTearBorderElements = new();
+
+    private double[]? _x;
+    private double[]? _y;
     
     public (Point[], List<FiniteElement>, HashSet<int>, HashSet<Edge3>, HashSet<int>) BuildGrid(GridParameters parameters)
     {
@@ -37,78 +40,128 @@ public class QuadraticGridBuilder
 
     private void CreatePoints()
     {
-        int innerX = 2 * Parameters!.XInnerSplits + 1;
-        int innerY = 2 * Parameters.YInnerSplits + 1;
+        // int innerX = 2 * Parameters!.XInnerSplits + 1;
+        // int innerY = 2 * Parameters.YInnerSplits + 1;
+        
+        int innerX = 1;
+        int innerY = 1;
+        
+        foreach (var segment in Parameters!.CircleMaterials)
+        {
+            if (segment.Degrees <= 45.0)
+            {
+                innerY += 2 * segment.Splits;
+            }
+            else
+            {
+                innerX += 2 * segment.Splits;
+            }
+        }
 
         int circleSplits = innerX + innerY - 1;
         
-        double[] x = new double[innerX + 2 * Parameters.CircleRadiusSplits];
-        double[] y = new double[innerY + 2 * Parameters.CircleRadiusSplits];
+        _x = new double[innerX + 2 * Parameters.CircleRadiusSplits];
+        _y = new double[innerY + 2 * Parameters.CircleRadiusSplits];
         
         _points = new Point[innerX * innerY + 2 * circleSplits * Parameters.CircleRadiusSplits];
 
-        double xPoint = Parameters.XInterval.LeftBorder;
-        double hx = Math.Abs(Parameters.XCoefficient - 1.0) < 1e-14
-            ? Parameters.XInterval.Length / Parameters.XInnerSplits
-            : Parameters.XInterval.Length * (1.0 - Parameters.XCoefficient) /
-              (1.0 - Math.Pow(Parameters.XCoefficient, Parameters.XInnerSplits));
+        int ky = 0;
+        int kx = innerX - 1;
+        
+        foreach (var segment in Parameters!.CircleMaterials)
+        {
+            var angleStart = segment.Start * Math.PI / 180.0;
+            var angleEnd = segment.Degrees * Math.PI / 180.0;
+            var hAngle = (angleEnd - angleStart) / segment.Splits;
+            var angle = angleStart;
+            
+            if (segment.Degrees <= 45.0)
+            {
+
+                if (segment.Start == 0.0)
+                {
+                    _y[ky++] = Parameters.XInterval.RightBorder * Math.Tan(angle);
+                }
+                
+                for (int i = 0; i < segment.Splits; i++)
+                {
+                    angle += hAngle;
+                    _y[ky + 1] = Parameters.XInterval.RightBorder * Math.Tan(angle);
+                    _y[ky] = (_y[ky + 1] + _y[ky - 1]) / 2.0;
+                    ky += 2;
+                }
+            }
+            else
+            {
+                if (Math.Abs(segment.Start - 45.0) < 1e-15)
+                {
+                    _x[kx--] = Parameters.YInterval.RightBorder / Math.Tan(angle);
+                }
+                
+                for (int i = 0; i < segment.Splits; i++)
+                {
+                    angle += hAngle;
+                    _x[kx - 1] = Parameters.YInterval.RightBorder / Math.Tan(angle);
+                    _x[kx] = (_x[kx + 1] + _x[kx - 1]) / 2.0;
+                    kx -= 2;
+                }
+            }
+        }
+        
         double xCirclePoint = Math.Sqrt(Parameters.XInterval.RightBorder * Parameters.XInterval.RightBorder +
                                         Parameters.YInterval.RightBorder * Parameters.YInterval.RightBorder);
-        double hxCircle = Math.Abs(Parameters.CircleCoefficient- 1.0) < 1e-14
+        double hxCircle = Math.Abs(Parameters.CircleCoefficient - 1.0) < 1e-14
             ? Parameters.Radius / Parameters.CircleRadiusSplits
             : Parameters.Radius * (1.0 - Parameters.CircleCoefficient) /
               (1.0 - Math.Pow(Parameters.CircleCoefficient, Parameters.CircleRadiusSplits));
-        xCirclePoint += hxCircle / 2.0;
-        
-        for (int i = 0; i < 2 * Parameters.XInnerSplits; i++)
-        {
-            x[i++] = xPoint;
-            xPoint += hx / 2.0;
-            x[i] = xPoint;
-            xPoint += hx / 2.0;
-            hx *= Parameters.XCoefficient;
-        }
-        x[2 * Parameters.XInnerSplits] = xPoint;
 
-        for (int i = 0; i < 2 * Parameters.CircleRadiusSplits; i++)
+        if (Parameters.XInterval.RightBorder + hxCircle / 2.0 > xCirclePoint)
         {
-            x[innerX + i++] = xCirclePoint;
+            xCirclePoint = Parameters.XInterval.RightBorder + hxCircle / 2.0;
+        }
+        else
+        {
+            hxCircle = Math.Abs(Parameters.CircleCoefficient- 1.0) < 1e-14
+                ? (Parameters.Radius - xCirclePoint) / Parameters.CircleRadiusSplits
+                : (Parameters.Radius - xCirclePoint) * (1.0 - Parameters.CircleCoefficient) /
+                  (1.0 - Math.Pow(Parameters.CircleCoefficient, Parameters.CircleRadiusSplits));
+        }
+        
+        for (int i = 0; i < 2 * Parameters.CircleRadiusSplits; i+=2)
+        {
+            _x[innerX + i] = xCirclePoint;
+            xCirclePoint += hxCircle / 2.0;
+            _x[innerX + i + 1] = xCirclePoint;
             xCirclePoint += hxCircle / 2.0;
             hxCircle *= Parameters.CircleCoefficient;
-            x[innerX + i] = xCirclePoint;
-            xCirclePoint += hxCircle / 2.0;
         }
         
-        double yPoint = Parameters.YInterval.LeftBorder;
-        double hy = Math.Abs(Parameters.YCoefficient - 1.0) < 1e-14
-            ? Parameters.YInterval.Length / Parameters.YInnerSplits
-            : Parameters.YInterval.Length * (1.0 - Parameters.YCoefficient) /
-              (1.0 - Math.Pow(Parameters.YCoefficient, Parameters.YInnerSplits));
         double yCirclePoint = Math.Sqrt(Parameters.YInterval.RightBorder * Parameters.YInterval.RightBorder +
                                         Parameters.XInterval.RightBorder * Parameters.XInterval.RightBorder);
         double hyCircle = Math.Abs(Parameters.CircleCoefficient- 1.0) < 1e-14
             ? Parameters.Radius / Parameters.CircleRadiusSplits
             : Parameters.Radius * (1.0 - Parameters.CircleCoefficient) /
               (1.0 - Math.Pow(Parameters.CircleCoefficient, Parameters.CircleRadiusSplits));
-        yCirclePoint += hyCircle / 2.0;
-        
-        for (int i = 0; i < 2 * Parameters.YInnerSplits; i++)
-        {
-            y[i++] = yPoint;
-            yPoint += hy / 2.0;
-            y[i] = yPoint;
-            yPoint += hy / 2.0;
-            hy *= Parameters.YCoefficient;
-        }
-        y[2 * Parameters.YInnerSplits] = yPoint;
 
-        for (int i = 0; i < 2 * Parameters.CircleRadiusSplits; i++)
+        if (Parameters.YInterval.RightBorder + hyCircle / 2.0 > yCirclePoint)
         {
-            y[innerY + i++] = yCirclePoint;
+            yCirclePoint = Parameters.XInterval.RightBorder + hyCircle / 2.0;
+        }
+        else
+        {
+            hyCircle = Math.Abs(Parameters.CircleCoefficient- 1.0) < 1e-14
+                ? (Parameters.Radius - yCirclePoint) / Parameters.CircleRadiusSplits
+                : (Parameters.Radius - yCirclePoint) * (1.0 - Parameters.CircleCoefficient) /
+                  (1.0 - Math.Pow(Parameters.CircleCoefficient, Parameters.CircleRadiusSplits));
+        }
+        
+        for (int i = 0; i < 2 * Parameters.CircleRadiusSplits; i+=2)
+        {
+            _y[innerY + i] = yCirclePoint;
+            yCirclePoint += hyCircle / 2.0;
+            _y[innerY + i + 1] = yCirclePoint;
             yCirclePoint += hyCircle / 2.0;
             hyCircle *= Parameters.CircleCoefficient;
-            y[innerY + i] = yCirclePoint;
-            yCirclePoint += hyCircle / 2.0;
         }
 
         int iPoint = 0;
@@ -117,119 +170,98 @@ public class QuadraticGridBuilder
         {
             for (int j = 0; j < innerX; j++)
             {
-                _points[iPoint++] = new(x[j], y[i]);
+                _points[iPoint++] = new(_x[j], _y[i]);
             }
         }
-        
-        double theta = Math.PI / 2 / (Parameters.XInnerSplits + Parameters.YInnerSplits);
         
         // Transition from inner to circle scope
-        Span<Point> points = stackalloc Point[innerX + innerY - 1];
-        int xIter = innerX - 1, yIter = 0;
-        for (int i = 0; i < innerX + innerY - 1; i+=2)
+        List<Point> points = new List<Point>();
+        
+        Point[] previousPoints = new Point[Parameters.XInnerSplits + Parameters.YInnerSplits + 1];
+        for (int i = 0; i < Parameters.YInnerSplits; i++)
         {
-            var angle = i * theta / 2.0;
-            
-            if (i == 0)
-            {
-                points[i] = new (x[innerX + 1] * Math.Cos(angle), y[innerX + 1] * Math.Sin(angle));
-                _points[iPoint++] = new ((points[i].X + x[xIter]) / 2.0, (points[i].Y + y[yIter]) / 2.0);
-            }
-            else
-            {
-                points[i] = new (x[innerX + 1] * Math.Cos(angle), y[innerX + 1] * Math.Sin(angle));
-                points[i - 1] = new ((points[i].X + points[i - 2].X) / 2.0, (points[i].Y + points[i - 2].Y) / 2.0);
-
-                _points[++iPoint] = new ((points[i].X + x[xIter]) / 2.0, (points[i].Y + y[yIter]) / 2.0);
-                _points[iPoint - 1] = new((_points[iPoint].X + _points[iPoint - 2].X) / 2.0,
-                    (_points[iPoint].Y + _points[iPoint - 2].Y) / 2.0);
-
-                iPoint++;
-            }
-            
-            if (i < (innerX + innerY) / 2 - 1)
-            {
-                yIter+=2;
-            }
-            else
-            {
-                xIter-=2;
-            }
-        }
-
-        foreach (var point in points)
-        {
-            _points[iPoint++] = point;
+            previousPoints[i] = new Point(_x[innerX - 1], _y[2 * i]);
         }
         
-        // Circle scope
-        for (int i = 0; i < 2 * Parameters.CircleRadiusSplits - 2; i+=2)
+        previousPoints[Parameters.YInnerSplits] = new Point(_x[innerX - 1], _y[innerY - 1]);
+
+        for (int i = Parameters.XInnerSplits; i > 0; i--)
         {
-            double radius = x[innerX + i + 3];
-            var angle = 0.0;
-        
-            for (int j = 0; j < innerX + innerY - 1; j+=2)
+            previousPoints[Parameters.XInnerSplits - i + Parameters.YInnerSplits + 1] = new Point(_x[2 * i - 2], _y[innerY - 1]);
+        }
+
+        for (int i = 0; i < Parameters.CircleRadiusSplits; i++)
+        {
+            double radius = _x[innerX + 1 + 2 * i];
+            int kek = 0;
+            bool flag = true;
+            
+            foreach (var segment in Parameters!.CircleMaterials)
             {
-                if (j == 0)
-                {
-                    // angle = 1.53846 * 1e-6;
-                    angle = j * theta / 2.0;
-                }
-                else if (j == 2)
-                {
-                    // angle = 6.153846 * 1e-6;
-                    angle = j * theta / 2.0;
-                }
-                else
-                {
-                    angle = j * theta / 2.0;
-                }
+                var angleStart = segment.Start * Math.PI / 180.0;
+                var angleEnd = segment.Degrees * Math.PI / 180.0;
+                var hAngle = (angleEnd - angleStart) / segment.Splits;
+                var angle = angleStart;
                 
-                points[j] = new(radius * Math.Cos(angle), radius * Math.Sin(angle));
-
-                if (j == 0)
+                for (int j = 0; j < segment.Splits; j++)
                 {
-                    _points[iPoint++] = new((points[j].X + _points[iPoint - (innerX + innerY - 1) - 1].X) / 2.0,
-                        (points[j].Y + _points[iPoint - (innerX + innerY - 1) - 1].Y) / 2.0);
-                }
-                else
-                {
-                    points[j - 1] = new((points[j].X + points[j - 2].X) / 2.0, (points[j].Y + points[j - 2].Y) / 2.0);
+                    Point mainPoint = new(radius * Math.Cos(angle), radius * Math.Sin(angle));
                     
-                    _points[++iPoint] = new((points[j].X + _points[iPoint - (innerX + innerY - 1)].X) / 2.0,
-                        (points[j].Y + _points[iPoint - (innerX + innerY - 1)].Y) / 2.0);
-                    _points[iPoint - 1] = new((_points[iPoint].X + _points[iPoint - 2].X) / 2.0,
-                        (_points[iPoint].Y + _points[iPoint - 2].Y) / 2.0);
+                    if (flag)
+                    {
+                        points.Add(new(mainPoint.X, mainPoint.Y));
+                        _points[iPoint++] = new Point((points[^1].X + previousPoints[kek].X) / 2.0,
+                            (points[^1].Y + previousPoints[kek].Y) / 2.0);
+                        previousPoints[kek] = new Point(points[^1].X, points[^1].Y);
+                        kek++;
+                        flag = false;
+                    }
+                    else
+                    {
+                        points.Add(new Point((mainPoint.X + points[^1].X) / 2.0, (mainPoint.Y + points[^1].Y) / 2.0));
+                        points.Add(new(mainPoint.X, mainPoint.Y));
+                        _points[++iPoint] = new Point((points[^1].X + previousPoints[kek].X) / 2.0,
+                            (points[^1].Y + previousPoints[kek].Y) / 2.0);
+                        _points[iPoint - 1] = new Point((_points[iPoint].X + _points[iPoint - 2].X) / 2.0,
+                            (_points[iPoint].Y + _points[iPoint - 2].Y) / 2.0);
+                        previousPoints[kek] = new Point(points[^1].X, points[^1].Y);
+                        kek++;
+                        iPoint++;
+                    }
 
-                    iPoint++;
+                    angle += hAngle;
                 }
             }
 
+            Point p = new Point(radius * Math.Cos(Parameters.CircleMaterials[^1].Degrees * Math.PI / 180.0),
+                radius * Math.Sin(Parameters.CircleMaterials[^1].Degrees * Math.PI / 180.0));
+            
+            points.Add(new Point((p.X + points[^1].X) / 2.0, (p.Y + points[^1].Y) / 2.0));
+            points.Add(new Point(p.X, p.Y));
+            _points[++iPoint] = new Point((points[^1].X + previousPoints[kek].X) / 2.0,
+                (points[^1].Y + previousPoints[kek].Y) / 2.0);
+            _points[iPoint - 1] = new Point((_points[iPoint].X + _points[iPoint - 2].X) / 2.0,
+                (_points[iPoint].Y + _points[iPoint - 2].Y) / 2.0);
+            previousPoints[kek] = new Point(points[^1].X, points[^1].Y);
+            iPoint++;
+            kek++;
+            
             foreach (var point in points)
             {
                 _points[iPoint++] = point;
             }
+            
+            points.Clear();
         }
     }
 
     private void GenerateCircleMaterials()
     {
-        int innerX = Parameters!.XInnerSplits + 1;
-        int innerY = Parameters.YInnerSplits + 1;
-        
-        double theta = Math.PI / 2  / (innerX + innerY - 2);
-        for (int i = 1; i < innerX + innerY - 1; i++)
+        foreach (var i in Parameters!.CircleMaterials)
         {
-            var angle = i * theta;
-            var degrees = angle * 180 / Math.PI;
-
-            for (int j = 0; j < Parameters.CircleMaterials.Count; j++)
+            for (int j = 0; j < i.Splits; j++)
             {
-                if (Parameters.CircleMaterials[j].Degrees - degrees >= 1e-14)
-                {
-                    _circleMaterials.Add(Parameters.CircleMaterials[j].Material);
-                    break;
-                }
+                _circleMaterials.Add(i.Material);
             }
         }
     }
@@ -244,12 +276,12 @@ public class QuadraticGridBuilder
         int innerY = 2 * Parameters.YInnerSplits + 1;
         int innerSkip = innerX * innerY;
         int circleRow = innerX + innerY - 1;
-        int circleXSkip = 2 * Parameters.XInnerSplits;
+        int circleXSkip = 2 * Parameters.YInnerSplits;
 
         // Inner scope
-        for (int i = 0; i < Parameters.XInnerSplits; i++)
+        for (int i = 0; i < Parameters.YInnerSplits; i++)
         {
-            for (int j = 0; j < Parameters.YInnerSplits; j++)
+            for (int j = 0; j < Parameters.XInnerSplits; j++)
             {
                 nodes[0] = 2 * j + 2 * innerX * i;
                 nodes[1] = 2 * j + 2 * innerX * i + 1;
@@ -279,7 +311,7 @@ public class QuadraticGridBuilder
         int materialCounter = 0;
         
         // Inner vertical with circle scopes
-        for (int i = 0; i < Parameters.XInnerSplits; i++)
+        for (int i = 0; i < Parameters.YInnerSplits; i++)
         {
             nodes[0] = innerX + innerX * 2 * i - 1;
             nodes[1] = innerSkip + 2 * i;
@@ -302,19 +334,19 @@ public class QuadraticGridBuilder
         }
         
         // Inner horizontal with circle scopes
-        for (int i = Parameters.YInnerSplits; i > 0; i--)
+        for (int i = Parameters.XInnerSplits; i > 0; i--)
         {
-            nodes[0] = innerSkip - (innerY - 2 * i) - 2;
-            nodes[1] = innerSkip - (innerY - 2 * i) - 1;
-            nodes[2] = innerSkip - (innerY - 2 * i);
+            nodes[0] = innerSkip - (innerX - 2 * i) - 2;
+            nodes[1] = innerSkip - (innerX - 2 * i) - 1;
+            nodes[2] = innerSkip - (innerX - 2 * i);
 
-            nodes[3] = innerSkip + circleXSkip + 2 + (innerY - 1 - 2 * i);
-            nodes[4] = innerSkip + circleXSkip + 1 + (innerY - 1 - 2 * i);
-            nodes[5] = innerSkip + circleXSkip + (innerY - 1 - 2 * i);
+            nodes[3] = innerSkip + circleXSkip + 2 + (innerX - 1 - 2 * i);
+            nodes[4] = innerSkip + circleXSkip + 1 + (innerX - 1 - 2 * i);
+            nodes[5] = innerSkip + circleXSkip + (innerX - 1 - 2 * i);
 
-            nodes[6] = innerSkip + circleRow + circleXSkip + 2 + (innerY - 1 - 2 * i);
-            nodes[7] = innerSkip + circleRow + circleXSkip + 1 + (innerY - 1 - 2 * i);
-            nodes[8] = innerSkip + circleRow + circleXSkip + (innerY - 1 - 2 * i);
+            nodes[6] = innerSkip + circleRow + circleXSkip + 2 + (innerX - 1 - 2 * i);
+            nodes[7] = innerSkip + circleRow + circleXSkip + 1 + (innerX - 1 - 2 * i);
+            nodes[8] = innerSkip + circleRow + circleXSkip + (innerX - 1 - 2 * i);
             
             _finiteElements.Add(new FiniteElement(nodes.ToArray(), _circleMaterials[materialCounter++], FiniteElementType.Quadratic));
         }

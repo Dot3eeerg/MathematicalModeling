@@ -4,25 +4,25 @@
     "LeftBorder": 0.0,
     "RightBorder": 1.0
   },
-  "X inner splits": 5,
+  "X inner splits": 4,
   "X coefficient": 1,
   "Y interval":
   {
     "LeftBorder": 0.0,
     "RightBorder": 1.0
   },
-  "Y inner splits": 5,
+  "Y inner splits": 7,
   "Y coefficient": 1,
   "Radius": 5.5,
-  "Circle splits": 10,
-  "Circle radius splits": 5,
+  "Circle splits": 11,
+  "Circle radius splits": 4,
   "Circle coefficient": 1,
   "Circle tear":
   {
-    "Offset": 0,
-    "Split": 0,
-    "Depth": 0,
-    "Height": 0
+    "Offset": 4,
+    "Split": 2,
+    "Depth": 2,
+    "Height": 1
   },
   "Left border": 1,
   "Bottom border": 1,
@@ -35,28 +35,54 @@
   },
   "Circle materials": [
     {
-      "Degrees": 10.01,
+      "Start": 0.0,
+      "Degrees": 1e-4,
       "Material":
       {
         "Lambda": 2.0,
-        "Gamma": 1.5
-      }
+        "Gamma": 3.0
+      },
+      "Splits": 2
     },
     {
-      "Degrees": 80.01,
+      "Start": 1e-4,
+      "Degrees": 25.0,
       "Material":
       {
         "Lambda": 2.0,
-        "Gamma": 1.5
-      }
+        "Gamma": 3.0
+      },
+      "Splits": 3
     },
     {
-      "Degrees": 90.01,
+      "Start": 25.0,
+      "Degrees": 45.0,
       "Material":
       {
-        "Lambda": 1.0,
+        "Lambda": 2.0,
+        "Gamma": 3.0
+      },
+      "Splits": 2
+    },
+    {
+      "Start": 45.0,
+      "Degrees": 70.0,
+      "Material":
+      {
+        "Lambda": 2.0,
+        "Gamma": 3.0
+      },
+      "Splits": 2
+    },
+    {
+      "Start": 70.0,
+      "Degrees": 90.0,
+      "Material":
+      {
+        "Lambda": 2.0,
         "Gamma": 4.0
-      }
+      },
+      "Splits": 2
     }
   ]
 }

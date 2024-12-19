@@ -43,10 +43,10 @@ public readonly record struct FiniteElement(IReadOnlyList<int> Nodes, Material E
         switch (FiniteElementType)
         {
             case FiniteElementType.Linear:
-                return $"{Nodes[0]} {Nodes[1]} {Nodes[3]} {Nodes[2]} {ElementMaterial.Lambda}";
+                return $"{Nodes[0]} {Nodes[1]} {Nodes[3]} {Nodes[2]} {ElementMaterial.Gamma}";
             
             case FiniteElementType.Quadratic:
-                return $"{Nodes[0]} {Nodes[1]} {Nodes[2]} {Nodes[5]} {Nodes[8]} {Nodes[7]} {Nodes[6]} {Nodes[3]} {ElementMaterial.Lambda} {Nodes[4]}";
+                return $"{Nodes[0]} {Nodes[1]} {Nodes[2]} {Nodes[5]} {Nodes[8]} {Nodes[7]} {Nodes[6]} {Nodes[3]} {ElementMaterial.Gamma} {Nodes[4]}";
             
             default:
                 throw new ArgumentOutOfRangeException($"Cannot find finite element type");
